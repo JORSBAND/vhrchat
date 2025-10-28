@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Змінено назву -->
+    <title>ВГР (Розширений функціонал)</title>
+    <!-- Tailwind CSS CDN для стилізації -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Стилі для основної сторінки та модальних вікон */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+        }
+        .vgr-card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 500px;
+        }
+        .chat-area {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #fff;
+        }
+        /* Стиль для повідомлення від Адміна */
+        .admin-message {
+            background-color: #e5e7eb; /* Сірий фон для виділення */
+            border-left: 4px solid #3b82f6;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        /* Стиль для власних повідомлень */
+        .my-message {
+            background-color: #bfdbfe; /* Світло-блакитний фон */
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            text-align: right;
+            margin-left: auto;
+            max-width: 90%;
+        }
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0.75rem;
+        }
+        /* Анімація для завантаження */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* Стиль для рядка користувача в адмін-панелі */
+        .user-row {
+            transition: background-color 0.2s;
+        }
+        .user-row:hover {
+            background-color: #f3f4f6;
+        }
+        
+        /* Стилі для кнопок редагування/видалення */
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem; /* 12px */
+            font-weight: 500;
+            padding: 0.25rem;
+            margin-left: 0.5rem;
+            display: none; /* Приховано за замовчуванням */
+        }
+        .message-container:hover .action-btn,
+        .announcement-item:hover .action-btn {
+            display: inline-block; /* Показати при наведенні */
+        }
+        .edit-btn { color: #2563eb; }
+        .edit-btn:hover { color: #1d4ed8; }
+        .delete-btn { color: #dc2626; }
+        .delete-btn:hover { color: #b91c1c; }
+
+        /* Стилі для завдань */
+        .task-item.is-done {
+            text-decoration: line-through;
+            background-color: #f3f4f6;
+        }
+        .task-item.is-done .task-text {
+            color: #6b7280;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Основний контейнер додатку -->
+    <div id="app-container" class="min-h-screen flex flex-col items-center py-8 px-4">
+        
+        <!-- Заголовок та статус користувача -->
+        <header class="w-full max-w-5xl bg-white p-4 mb-6 rounded-xl shadow-lg flex justify-between items-center sticky top-0 z-10">
+            <!-- Змінено заголовок -->
+            <h1 class="text-3xl font-extrabold text-blue-800">ВГР</h1>
+            <div id="user-info" class="text-right flex items-center space-x-4">
+                <button id="notifications-btn" class="bg-yellow-500 text-white p-2 rounded-full text-sm font-medium hover:bg-yellow-600 transition duration-200 hidden" onclick="requestNotificationPermission()">
+                    Увімкнути Сповіщення
+                </button>
+                <p id="notification-status" class="text-sm text-green-600 ml-4 hidden"></p>
+                <!-- Інформація про користувача відображатиметься тут -->
+            </div>
+        </header>
+
+        <!-- Головна зона контенту -->
+        <main id="main-content" class="w-full max-w-5xl bg-white p-6 rounded-xl shadow-lg">
+            
+            <!-- Стан завантаження -->
+            <div id="loading-state" class="text-center py-20">
+                <div class="spinner"></div>
+                <p class="mt-4 text-gray-600">Ініціалізація Firebase...</p>
+            </div>
+            
+            <!-- Реєстрація / Вхід (відображається, якщо користувач не увійшов) -->
+            <div id="auth-view" class="flex flex-col items-center justify-center p-8 hidden">
+                <div class="vgr-card text-center">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-700">Вхід / Реєстрація</h2>
+                    <p class="text-sm text-green-600 mb-4">Використовується хмарна база даних Firebase.</p>
+                    
+                    <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center bg-red-600 text-white p-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200 mb-6">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M22.56 12.2c0-.78-.07-1.5-.2-2.2H12v4.1h5.88c-.24 1.25-.97 2.37-2.1 3.16v2.7h3.48c2.04-1.88 3.22-4.63 3.22-7.84z" fill="#4285F4"/><path d="M12 23c3.27 0 6.02-1.08 8.03-2.92l-3.48-2.7c-1.09.73-2.48 1.16-4.55 1.16-3.49 0-6.44-2.35-7.49-5.5h-3.5v2.75c2.03 4.02 6.06 6.78 11.47 6.78z" fill="#34A853"/><path d="M4.51 15.6c-.23-.67-.36-1.38-.36-2.15s.13-1.48.36-2.15v-2.75h-3.5c-.75 1.5-1.16 3.15-1.16 4.9s.41 3.4 1.16 4.9l3.5-2.75z" fill="#FBBC05"/><path d="M12 4.14c1.8-.02 3.48.6 4.75 1.77l3.07-3.07C18.02.82 15.27 0 12 0 6.54 0 2.51 2.76.48 6.78l3.5 2.75c1.05-3.15 4-5.5 7.49-5.5z" fill="#EA4335"/></svg>
+                        Увійти через Google
+                    </button>
+
+                    <div class="flex items-center mb-6">
+                        <div class="flex-grow border-t border-gray-300"></div>
+                        <span class="flex-shrink mx-4 text-gray-400">або</span>
+                        <div class="flex-grow border-t border-gray-300"></div>
+                    </div>
+
+                    <input type="email" id="email-input" placeholder="Електронна пошта" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <input type="password" id="password-input" placeholder="Пароль" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <button onclick="handleAuth(true)" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 mb-3">Увійти</button>
+                    <button onclick="handleAuth(false)" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition duration-200">Зареєструватися</button>
+                    <p id="auth-error" class="text-red-500 mt-4 text-sm hidden">Помилка автентифікації.</p>
+                </div>
+            </div>
+
+            <!-- Стан очікування підтвердження -->
+            <div id="pending-view" class="flex flex-col items-center justify-center p-8 hidden">
+                <div class="vgr-card text-center bg-yellow-50 border border-yellow-300">
+                    <h2 class="text-2xl font-bold mb-4 text-yellow-700">Очікування Підтвердження</h2>
+                    <p class="text-gray-700 mb-4">Ваш обліковий запис було успішно створено, але для доступу до порталу ВГР потрібне підтвердження адміністратором.</p>
+                    <p class="text-sm font-semibold text-red-500">Будь ласка, очікуйте, доки адміністратор активує ваш профіль.</p>
+                    <button class="mt-6 bg-red-500 text-white p-2 rounded-lg text-sm font-medium hover:bg-red-600 transition duration-200 w-full" onclick="logout()">Вийти</button>
+                </div>
+            </div>
+
+            <!-- Основний портал (відображається після входу та підтвердження) -->
+            <div id="portal-view" class="hidden">
+                
+                <!-- НОВА Навігація вкладок (Головна / Завдання) -->
+                <div class="flex border-b mb-6">
+                    <button id="nav-btn-main" class="p-3 mr-4 font-medium text-blue-600 border-b-2 border-blue-600" onclick="switchMainTab('main')">
+                        Головна
+                    </button>
+                    <button id="nav-btn-tasks" class="p-3 mr-4 font-medium text-gray-600 hover:text-blue-600" onclick="switchMainTab('tasks')">
+                        Завдання
+                    </button>
+                </div>
+
+                <!-- Вкладка 1: Головна (Чат, Оголошення) -->
+                <div id="main-tab-main" class="main-tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Колонка 1: Оголошення та Статус -->
+                        <div class="md:col-span-1 flex flex-col space-y-6">
+                            <div class="bg-white p-4 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Мій Статус</h3>
+                                <div class="flex items-center mb-3">
+                                    <img id="profile-photo-display" class="w-12 h-12 rounded-full mr-3 border border-gray-300" src="https://placehold.co/128x128/ccc/666?text=VGR" alt="Фото профілю">
+                                    <div>
+                                        <p id="current-user-name" class="text-gray-700 font-medium"></p>
+                                        <p id="current-user-email" class="text-gray-600 text-sm"></p>
+                                    </div>
+                                </div>
+                                
+                                <p id="current-user-role" class="text-gray-600">Роль: <span class="font-bold">Завантаження...</span></p>
+                                <p class="text-sm mt-1 text-gray-400 mb-4">ID: <span id="current-user-id" class="break-all"></span></p>
+
+                                <button onclick="showProfileModal(true)" class="mt-2 bg-purple-500 text-white p-2 rounded-lg text-sm font-medium hover:bg-purple-600 transition duration-200 w-full mb-2">
+                                    Мій Профіль
+                                </button>
+                                
+                                <!-- Кнопка адмін-панелі -->
+                                <button id="show-admin-panel-btn" class="mt-2 bg-blue-500 text-white p-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition duration-200 w-full hidden" onclick="toggleAdminPanel(true)">
+                                    Адмін-панель
+                                </button>
+                                <button id="logout-btn" class="mt-2 bg-red-500 text-white p-2 rounded-lg text-sm font-medium hover:bg-red-600 transition duration-200 w-full" onclick="logout()">Вийти</button>
+                            </div>
+
+                            <!-- НОВА Форма Створення Оголошення (для всіх) -->
+                            <div class="bg-white p-4 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Створити Оголошення</h3>
+                                <input type="text" id="announcement-title" placeholder="Заголовок оголошення" class="w-full p-3 mb-3 border rounded-lg">
+                                <textarea id="announcement-body" placeholder="Текст оголошення" rows="3" class="w-full p-3 mb-3 border rounded-lg"></textarea>
+                                <button onclick="postAnnouncement()" class="bg-indigo-600 text-white p-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-200 w-full">Опублікувати</button>
+                                <p id="announcement-status" class="mt-2 text-sm text-green-600 hidden">Оголошення опубліковано!</p>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-xl shadow-lg flex-grow">
+                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Оголошення Спільноти</h3>
+                                <div id="announcements-list" class="space-y-3 max-h-96 overflow-y-auto">
+                                    <p class="text-gray-500">Завантаження оголошень...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Колонка 2: Чат -->
+                        <div class="md:col-span-2 flex flex-col">
+                            <div class="bg-white p-4 rounded-xl shadow-lg flex-grow flex flex-col">
+                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Спільний Чат Ради</h3>
+                                <div id="chat-messages" class="chat-area flex-grow mb-4">
+                                    <!-- Повідомлення відображаються тут -->
+                                    <p class="text-gray-500">Завантаження повідомлень...</p>
+                                </div>
+                                <div class="flex">
+                                    <input type="text" id="chat-input" placeholder="Ваше повідомлення..." class="flex-grow p-3 border border-gray-300 rounded-l-lg focus:ring-blue-500 focus:border-blue-500" onkeypress="if(event.key === 'Enter') sendMessage()">
+                                    <button onclick="sendMessage()" class="bg-blue-600 text-white p-3 rounded-r-lg font-medium hover:bg-blue-700 transition duration-200">Надіслати</button>
+                                </div>
+                                <p id="chat-status" class="text-red-500 text-sm mt-2 hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка 2: Завдання -->
+                <div id="main-tab-tasks" class="main-tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Колонка 1: Створення Завдання (Тільки Адмін) -->
+                        <div id="create-task-panel" class="md:col-span-1 bg-white p-4 rounded-xl shadow-lg hidden">
+                            <h3 class="text-xl font-semibold mb-3 text-blue-700">Створити Завдання</h3>
+                            <input type="text" id="task-title" placeholder="Назва завдання" class="w-full p-3 mb-3 border rounded-lg">
+                            <textarea id="task-description" placeholder="Детальний опис завдання" rows="3" class="w-full p-3 mb-3 border rounded-lg"></textarea>
+                            <button onclick="createTask()" class="bg-green-600 text-white p-3 rounded-lg font-medium hover:bg-green-700 transition duration-200 w-full">Додати Завдання</button>
+                            <p id="task-status" class="mt-2 text-sm text-green-600 hidden"></p>
+                        </div>
+                        
+                        <!-- Колонка 2: Список Завдань (для всіх) -->
+                        <div class="md:col-span-2 bg-white p-4 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-semibold mb-3 text-blue-700">Актуальні Завдання</h3>
+                            <div id="tasks-list" class="space-y-4">
+                                <p class="text-gray-500">Завантаження завдань...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модальне вікно Адмін-панелі -->
+            <div id="admin-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-20 flex justify-center items-center hidden">
+                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto transform transition-all">
+                    <div class="flex justify-between items-center border-b pb-4 mb-6">
+                        <h2 class="text-3xl font-bold text-blue-800">Панель Адміністратора</h2>
+                        <button onclick="toggleAdminPanel(false)" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+                    </div>
+
+                    <!-- Навігація в Адмін-панелі (Видалено вкладку Оголошення) -->
+                    <div class="flex border-b mb-6">
+                        <button class="tab-btn p-3 mr-4 font-medium text-blue-600 border-b-2 border-blue-600" onclick="switchAdminTab('users')">
+                            Керування Користувачами
+                        </button>
+                        <button class="tab-btn p-3 font-medium text-gray-600 hover:text-blue-600" onclick="switchAdminTab('roles')">
+                            Видача Ролей
+                        </button>
+                    </div>
+
+                    <!-- 1. Керування Користувачами (Users Tab) -->
+                    <div id="admin-tab-users" class="admin-tab-content">
+                        <h3 class="text-xl font-semibold mb-4 text-blue-700">Облікові Записи та Підтвердження</h3>
+                        
+                        <div class="bg-gray-100 p-4 rounded-lg mb-4 flex justify-between items-center">
+                            <p class="font-medium">Користувачі в очікуванні: <span id="pending-count" class="font-bold text-red-500">0</span></p>
+                            <p class="font-medium">Активні користувачі: <span id="active-count" class="font-bold text-green-500">0</span></p>
+                        </div>
+                        
+                        <p id="user-list-action-status" class="mt-2 mb-2 text-sm text-green-600 hidden"></p>
+
+                        <div id="user-list-container" class="space-y-2">
+                            <!-- Список користувачів буде завантажено тут -->
+                            <p id="user-list-status" class="text-gray-500">Завантаження списку користувачів...</p>
+                        </div>
+                    </div>
+
+                    <!-- 2. Створення Оголошення (ВИДАЛЕНО) -->
+                    <div id="admin-tab-announcements" class="admin-tab-content hidden">
+                        <!-- Ця вкладка більше не використовується, форма перенесена на головну -->
+                    </div>
+
+                    <!-- 3. Керування Ролями (Roles Tab) -->
+                    <div id="admin-tab-roles" class="admin-tab-content hidden">
+                        <div class="p-4 bg-white rounded-lg shadow">
+                            <h3 class="text-xl font-semibold mb-3 text-blue-700">Зміна Ролі за ID</h3>
+                            <p class="text-sm text-gray-500 mb-3">Введіть повний ID користувача (з вкладки "Керування Користувачами"), щоб змінити його роль.</p>
+                            <input type="text" id="target-user-id" placeholder="ID користувача" class="w-full p-3 mb-3 border rounded-lg">
+                            <div class="flex space-x-4">
+                                <button onclick="setUserRole('Admin')" class="flex-1 bg-purple-600 text-white p-3 rounded-lg font-medium hover:bg-purple-700 transition duration-200">Зробити Адміном</button>
+                                <button onclick="setUserRole('Member')" class="flex-1 bg-yellow-600 text-white p-3 rounded-lg font-medium hover:bg-yellow-700 transition duration-200">Зробити Звичайним</button>
+                            </div>
+                            <p id="role-status" class="mt-2 text-sm text-red-500 hidden">Статус ролі.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- Модальне вікно Профілю користувача (Новий функціонал) -->
+            <div id="profile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-30 flex justify-center items-center hidden">
+                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+                    <div class="flex justify-between items-center border-b pb-4 mb-6">
+                        <h2 class="text-2xl font-bold text-purple-700">Налаштування Профілю</h2>
+                        <button onclick="showProfileModal(false)" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="text-center mb-6">
+                            <img id="profile-photo-input-display" class="w-24 h-24 rounded-full mx-auto border-4 border-purple-300" src="https://placehold.co/128x128/ccc/666?text=VGR" alt="Фото профілю">
+                            <p class="text-sm text-gray-500 mt-2">Ваша електронна пошта: <span id="profile-email-display" class="font-medium text-gray-700"></span></p>
+                        </div>
+                        
+                        <div>
+                            <label for="profile-name-input" class="block text-sm font-medium text-gray-700 mb-1">Ім'я та Прізвище</label>
+                            <input type="text" id="profile-name-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+                        
+                        <div>
+                            <label for="profile-phone-input" class="block text-sm font-medium text-gray-700 mb-1">Номер Телефону</label>
+                            <input type="tel" id="profile-phone-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" placeholder="Наприклад: +380XXXXXXXXX">
+                        </div>
+
+                        <div>
+                            <label for="profile-photo-input" class="block text-sm font-medium text-gray-700 mb-1">Посилання на Фото (URL)</label>
+                            <input type="url" id="profile-photo-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" placeholder="https://example.com/photo.jpg">
+                        </div>
+
+                        <button onclick="saveProfileSettings()" class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-200 mt-4">
+                            Зберегти Налаштування
+                        </button>
+                        <p id="profile-status" class="mt-2 text-sm text-green-600 hidden text-center">Профіль оновлено!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модальне вікно підтвердження -->
+            <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex justify-center items-center hidden">
+                <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm transform transition-all">
+                    <h3 id="confirm-title" class="text-lg font-bold text-gray-900">Підтвердження Дії</h3>
+                    <p id="confirm-text" class="text-sm text-gray-600 mt-2 mb-6">Ви впевнені?</p>
+                    <div class="flex justify-end space-x-3">
+                        <button id="confirm-btn-cancel" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-400">Скасувати</button>
+                        <button id="confirm-btn-ok" class="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700">Підтвердити</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- НОВЕ Модальне вікно Редагування (для чату/оголошень) -->
+            <div id="edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-40 flex justify-center items-center hidden">
+                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
+                    <div class="flex justify-between items-center border-b pb-4 mb-6">
+                        <h2 id="edit-modal-title" class="text-2xl font-bold text-blue-700">Редагувати</h2>
+                        <button onclick="showEditModal(false)" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+                    </div>
+                    <!-- Поля для редагування -->
+                    <input type="hidden" id="edit-modal-type">
+                    <input type="hidden" id="edit-modal-doc-id">
+                    
+                    <!-- Поле для Заголовка (для оголошень) -->
+                    <div id="edit-modal-title-group" class="mb-4 hidden">
+                        <label for="edit-modal-input-title" class="block text-sm font-medium text-gray-700 mb-1">Заголовок</labe>
+                        <input type="text" id="edit-modal-input-title" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <!-- Поле для Тексту/Опису -->
+                    <div>
+                        <label for="edit-modal-input-body" class="block text-sm font-medium text-gray-700 mb-1">Текст</labe>
+                        <textarea id="edit-modal-input-body" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    
+                    <button onclick="saveEdit()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 mt-4">
+                        Зберегти Зміни
+                    </button>
+                    <p id="edit-status" class="mt-2 text-sm text-green-600 hidden text-center"></p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Підключення та логіка Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile, deleteUser } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, orderBy, addDoc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Встановлення рівня логування для налагодження
+        setLogLevel('Debug');
+
+        // Конфігурація Firebase, надана користувачем
+        const firebaseConfigFromUser = {
+            apiKey: "AIzaSyCm8nZvhps4yeYDzPNyKLI_PvadAOeYI20",
+            authDomain: "vhrchat.firebaseapp.com",
+            projectId: "vhrchat",
+            storageBucket: "vhrchat.firebasestorage.app",
+            messagingSenderId: "1039293838718",
+            appId: "1:1039293838718:web:b74fddda402267040bef2f",
+            measurementId: "G-R9XY6JRZMF"
+        };
+        
+        // Глобальні змінні (використовуємо надану конфігурацію, якщо оточення не надає свою)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfigFromUser.projectId;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfigFromUser;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Глобальні об'єкти Firebase
+        let app;
+        let db;
+        let auth;
+        let googleProvider;
+        let currentUserId = null;
+        let currentUserEmail = '';
+        let currentUserName = 'Гість';
+        let currentUserRole = 'Guest';
+        let currentUserPhone = ''; // Нове поле
+        let currentUserPhotoURL = 'https://placehold.co/128x128/ccc/666?text=VGR'; // Нове поле
+        let isConfirmed = false;
+        let isAuthReady = false;
+        let allUsers = [];
+
+        const ui = {
+            loadingState: document.getElementById('loading-state'),
+            authView: document.getElementById('auth-view'),
+            portalView: document.getElementById('portal-view'),
+            pendingView: document.getElementById('pending-view'),
+            adminModal: document.getElementById('admin-modal'),
+            profileModal: document.getElementById('profile-modal'),
+            confirmModal: document.getElementById('confirm-modal'),
+            editModal: document.getElementById('edit-modal'), // НОВЕ
+            adminPanelBtn: document.getElementById('show-admin-panel-btn'),
+            notificationsBtn: document.getElementById('notifications-btn'),
+            notificationStatus: document.getElementById('notification-status'), 
+            
+            emailInput: document.getElementById('email-input'),
+            passwordInput: document.getElementById('password-input'),
+            authError: document.getElementById('auth-error'),
+
+            currentUserRoleDisplay: document.getElementById('current-user-role'),
+            currentUserIdDisplay: document.getElementById('current-user-id'),
+            currentUserEmailDisplay: document.getElementById('current-user-email'),
+            currentUserNameDisplay: document.getElementById('current-user-name'),
+            profilePhotoDisplay: document.getElementById('profile-photo-display'),
+            
+            announcementsList: document.getElementById('announcements-list'),
+            chatMessages: document.getElementById('chat-messages'),
+            chatInput: document.getElementById('chat-input'),
+            chatStatus: document.getElementById('chat-status'), 
+
+            // Форма оголошень (тепер на головній)
+            announcementTitle: document.getElementById('announcement-title'),
+            announcementBody: document.getElementById('announcement-body'),
+            announcementStatus: document.getElementById('announcement-status'),
+            
+            // Admin UI
+            targetUserId: document.getElementById('target-user-id'),
+            roleStatus: document.getElementById('role-status'),
+            userListContainer: document.getElementById('user-list-container'),
+            userListActionStatus: document.getElementById('user-list-action-status'), 
+            pendingCount: document.getElementById('pending-count'),
+            activeCount: document.getElementById('active-count'),
+
+            // Profile UI
+            profileNameInput: document.getElementById('profile-name-input'),
+            profilePhoneInput: document.getElementById('profile-phone-input'),
+            profilePhotoInput: document.getElementById('profile-photo-input'),
+            profilePhotoInputDisplay: document.getElementById('profile-photo-input-display'),
+            profileEmailDisplay: document.getElementById('profile-email-display'),
+            profileStatus: document.getElementById('profile-status'),
+
+            // Confirm Modal UI
+            confirmTitle: document.getElementById('confirm-title'),
+            confirmText: document.getElementById('confirm-text'),
+            confirmBtnCancel: document.getElementById('confirm-btn-cancel'),
+            confirmBtnOk: document.getElementById('confirm-btn-ok'),
+
+            // Edit Modal UI (НОВЕ)
+            editModalTitle: document.getElementById('edit-modal-title'),
+            editModalTitleGroup: document.getElementById('edit-modal-title-group'),
+            editModalInputTitle: document.getElementById('edit-modal-input-title'),
+            editModalInputBody: document.getElementById('edit-modal-input-body'),
+            editModalType: document.getElementById('edit-modal-type'),
+            editModalDocId: document.getElementById('edit-modal-doc-id'),
+            editStatus: document.getElementById('edit-status'),
+
+            // Tasks UI (НОВЕ)
+            createTaskPanel: document.getElementById('create-task-panel'),
+            taskTitle: document.getElementById('task-title'),
+            taskDescription: document.getElementById('task-description'),
+            taskStatus: document.getElementById('task-status'),
+            tasksList: document.getElementById('tasks-list'),
+        };
+
+        const COLLECTIONS = {
+            USERS: 'users',
+            CHAT: 'chat',
+            ANNOUNCEMENTS: 'announcements',
+            TASKS: 'tasks' // НОВА КОЛЕКЦІЯ
+        };
+        
+        // Зберігаємо останній час оголошення для сповіщень
+        let lastAnnouncementTimestamp = null;
+        let lastMessageTimestamp = null;
+        let lastTaskTimestamp = null; // НОВЕ
+
+        // --- ДОПОМІЖНІ ФУНКЦІЇ ---
+
+        /**
+         * Помічник для відображення тимчасових повідомлень про стан
+         */
+        function showTempStatus(element, message, isSuccess = true) {
+            if (!element) return;
+            element.textContent = message;
+            element.classList.remove('hidden');
+            if (isSuccess) {
+                element.classList.remove('text-red-500');
+                element.classList.add('text-green-600');
+            } else {
+                element.classList.remove('text-green-600');
+                element.classList.add('text-red-500');
+            }
+            setTimeout(() => element.classList.add('hidden'), 4000);
+        }
+
+        /**
+         * Помічник для копіювання в буфер обміну (використовує execCommand для сумісності з iFrame)
+         */
+        function copyToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";  // Уникаємо прокручування
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showTempStatus(ui.userListActionStatus, `ID скопійовано: ${text.substring(0, 12)}...`, true);
+            } catch (err) {
+                console.error('Не вдалося скопіювати ID:', err);
+                showTempStatus(ui.userListActionStatus, 'Помилка копіювання ID.', false);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        /**
+         * Модальне вікно підтвердження
+         */
+        let confirmCallback = null;
+        
+        function showConfirmModal(title, text, onConfirm) {
+            ui.confirmTitle.textContent = title;
+            ui.confirmText.textContent = text;
+            
+            confirmCallback = onConfirm; // Зберігаємо колбек
+
+            ui.confirmBtnCancel.onclick = () => {
+                confirmCallback = null;
+                ui.confirmModal.classList.add('hidden');
+            };
+            
+            ui.confirmBtnOk.onclick = () => {
+                if (confirmCallback) {
+                    confirmCallback();
+                }
+                confirmCallback = null;
+                ui.confirmModal.classList.add('hidden');
+            };
+            
+            ui.confirmModal.classList.remove('hidden');
+        }
+
+        
+        /**
+         * Ініціалізація Firebase та автентифікація
+         */
+        async function initializeAppAndAuth() {
+            if (!firebaseConfig.apiKey) {
+                console.error("Firebase config is missing.");
+                ui.loadingState.innerHTML = '<p class="text-red-600">Помилка: Відсутня конфігурація Firebase.</p>';
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                googleProvider = new GoogleAuthProvider();
+                
+                // Встановлення слухача для змін стану автентифікації
+                onAuthStateChanged(auth, handleAuthStateChange);
+
+                // Автоматичний вхід, якщо є токен середовища
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    // Анонімний вхід, якщо токену немає, щоб onAuthStateChanged спрацював
+                    await signInAnonymously(auth);
+                }
+                
+                // Дозволити користувачу керувати сповіщеннями
+                ui.notificationsBtn.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Помилка ініціалізації або автентифікації Firebase:", error);
+                ui.loadingState.innerHTML = `<p class="text-red-600">Помилка ініціалізації: ${error.message}</p>`;
+            }
+        }
+
+        /**
+         * Обробник зміни стану автентифікації
+         */
+        async function handleAuthStateChange(user) {
+            ui.loadingState.classList.add('hidden');
+            isAuthReady = true;
+            
+            // Скидаємо всі view
+            ui.authView.classList.add('hidden');
+            ui.portalView.classList.add('hidden');
+            ui.pendingView.classList.add('hidden');
+
+            if (user && user.isAnonymous === false) { // Перевіряємо, чи це реальний користувач
+                currentUserId = user.uid;
+                currentUserEmail = user.email;
+                currentUserName = user.displayName || 'Користувач ВГР';
+                
+                // 1. Отримати дані користувача (роль, статус підтвердження)
+                // Передаємо null для phoneFromRegistration, оскільки це не реєстрація
+                await fetchAndSetUserData(currentUserId, currentUserEmail, currentUserName, null); 
+                
+                // 2. Вирішити, який екран показати
+                if (isConfirmed) {
+                    // Користувач підтверджений
+                    ui.portalView.classList.remove('hidden');
+                    updateUIForUser();
+                    setupListeners(); // Встановлюємо слухачі лише для підтверджених користувачів
+                    switchMainTab('main'); // Активуємо головну вкладку
+                } else {
+                    // Користувач очікує підтвердження
+                    ui.pendingView.classList.remove('hidden');
+                    updateUIForUser(); // Показуємо статус
+                }
+
+            } else {
+                // Користувач вийшов
+                currentUserId = null;
+                currentUserEmail = '';
+                currentUserName = 'Гість';
+                currentUserRole = 'Guest';
+                currentUserPhone = '';
+                currentUserPhotoURL = 'https://placehold.co/128x128/ccc/666?text=VGR';
+                isConfirmed = false;
+                ui.authView.classList.remove('hidden');
+                updateUIForUser();
+            }
+        }
+
+        /**
+         * Оновлення UI на основі ролі користувача
+         */
+        function updateUIForUser() {
+            if (currentUserId) {
+                ui.currentUserIdDisplay.textContent = currentUserId;
+                ui.currentUserEmailDisplay.textContent = currentUserEmail;
+                ui.currentUserNameDisplay.textContent = currentUserName;
+                ui.currentUserRoleDisplay.innerHTML = `Роль: <span class="font-bold">${currentUserRole}</span>`;
+                ui.profilePhotoDisplay.src = currentUserPhotoURL; // Оновлення фото на головній
+                
+                if (currentUserRole === 'Admin' && isConfirmed) {
+                    ui.adminPanelBtn.classList.remove('hidden');
+                    ui.createTaskPanel.classList.remove('hidden'); // НОВЕ: Показати адмінам форму завдань
+                } else {
+                    ui.adminPanelBtn.classList.add('hidden');
+                    ui.createTaskPanel.classList.add('hidden'); // НОВЕ: Приховати від інших
+                }
+            } else {
+                 ui.currentUserRoleDisplay.innerHTML = `Роль: <span class="font-bold">Гість</span>`;
+                 ui.currentUserIdDisplay.textContent = 'Недоступно';
+                 ui.currentUserEmailDisplay.textContent = 'Увійдіть для доступу';
+                 ui.currentUserNameDisplay.textContent = 'Не зареєстрований';
+                 ui.profilePhotoDisplay.src = 'https://placehold.co/128x128/ccc/666?text=VGR';
+            }
+        }
+        
+        /**
+         * Отримання даних користувача з Firestore (для ролі та підтвердження)
+         */
+        async function fetchAndSetUserData(userId, email, name, phoneFromRegistration = null) {
+            if (!db) return;
+            const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, userId);
+            
+            try {
+                const docSnap = await getDoc(userDocRef);
+                const defaultPhoto = auth.currentUser?.photoURL || 'https://placehold.co/128x128/ccc/666?text=VGR';
+
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    currentUserRole = userData.role || 'Member';
+                    isConfirmed = userData.isConfirmed === true;
+                    currentUserName = userData.name || name;
+                    currentUserPhone = userData.phone || '';
+                    currentUserPhotoURL = userData.photoURL || defaultPhoto;
+
+                } else {
+                    // Якщо користувач новий, створити його профіль
+                    currentUserRole = 'Member';
+                    isConfirmed = false;
+                    currentUserPhotoURL = defaultPhoto;
+                    
+                    // Пріоритет телефону: 1. З реєстрації, 2. З Auth, 3. Запит
+                    let phone = phoneFromRegistration || auth.currentUser?.phoneNumber || '';
+                    if (!phone) {
+                        phone = prompt("Введіть Ваш номер телефону (обов'язково для реєстрації):", "");
+                    }
+                    
+                    await setDoc(userDocRef, {
+                        role: 'Member',
+                        name: name,
+                        email: email,
+                        phone: phone || '', // Зберігаємо номер
+                        photoURL: defaultPhoto, // Зберігаємо фото
+                        isConfirmed: false,
+                        createdAt: new Date()
+                    });
+                    currentUserPhone = phone;
+                }
+            } catch (error) {
+                console.error("Помилка отримання/створення даних користувача:", error);
+                currentUserRole = 'Member';
+                isConfirmed = false;
+            }
+        }
+
+        // --- АВТЕНТИФІКАЦІЯ ---
+
+        /**
+         * Автентифікація: Вхід або Реєстрація
+         */
+        async function handleAuth(isLogin) {
+            const email = ui.emailInput.value.trim();
+            const password = ui.passwordInput.value.trim();
+            ui.authError.classList.add('hidden');
+
+            if (!email || !password) {
+                showError("Будь ласка, введіть пошту та пароль.");
+                return;
+            }
+
+            try {
+                let userCredential;
+                if (isLogin) {
+                    userCredential = await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    // При реєстрації через пошту запитуємо ім'я та телефон
+                    const name = prompt("Введіть Ваше ім'я та прізвище для реєстрації:");
+                    if (!name || name.trim() === '') {
+                        throw new Error("Ім'я та прізвище є обов'язковими.");
+                    }
+                    const phone = prompt("Введіть Ваш номер телефону (обов'язково):", "");
+                    if (!phone || phone.trim() === '') {
+                        throw new Error("Номер телефону є обов'язковим.");
+                    }
+                    
+                    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    
+                    // Оновлюємо ім'я в Firebase Auth
+                    await updateProfile(userCredential.user, { displayName: name });
+                    currentUserName = name;
+                    
+                    // Створюємо профіль у Firestore, передаючи зібрані дані
+                    await fetchAndSetUserData(userCredential.user.uid, email, name, phone);
+                }
+                ui.emailInput.value = '';
+                ui.passwordInput.value = '';
+            } catch (error) {
+                console.error("Помилка автентифікації:", error);
+                let message = "Помилка входу. Перевірте пошту/пароль.";
+                if (error.code === 'auth/email-already-in-use') {
+                    message = "Ця пошта вже використовується.";
+                } else if (error.code === 'auth/weak-password') {
+                    message = "Пароль має бути не менше 6 символів.";
+                } else if (error.message.includes("обов'язковими")) {
+                     message = error.message;
+                }
+                showError(message);
+            }
+        }
+        
+        /**
+         * Вхід через Google
+         */
+        async function signInWithGoogle() {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                
+                // 1. Оновлюємо ім'я в профілі Auth, якщо воно порожнє
+                let name = user.displayName;
+                if (!name || name.trim() === '') {
+                    name = prompt("Введіть Ваше ім'я та прізвище для реєстрації:", "");
+                     if (name && name.trim() !== '') {
+                          await updateProfile(user, { displayName: name });
+                          currentUserName = name;
+                     }
+                }
+
+                // 2. Створюємо/оновлюємо профіль у Firestore (телефон запитає всередині fetchAndSetUserData, якщо його немає)
+                await fetchAndSetUserData(user.uid, user.email, name, null);
+
+            } catch (error) {
+                console.error("Помилка Google Auth:", error);
+                showError("Помилка входу через Google.");
+            }
+        }
+
+        function logout() {
+            signOut(auth);
+            toggleAdminPanel(false); // Закриваємо адмін-панель при виході
+            showProfileModal(false); // Закриваємо профіль при виході
+        }
+
+        function showError(message) {
+            ui.authError.textContent = message;
+            ui.authError.classList.remove('hidden');
+        }
+
+
+        // --- СЛУХАЧІ FIREBASE ТА СПОВІЩЕННЯ ---
+
+        function setupListeners() {
+            if (!db || !isAuthReady || !isConfirmed) return;
+            
+            // 1. Слухач оголошень
+            const annRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.ANNOUNCEMENTS);
+            onSnapshot(query(annRef, orderBy('timestamp', 'desc')), (snapshot) => {
+                renderAnnouncements(snapshot.docs);
+                sendNotificationIfNew(snapshot.docs, 'announcement');
+            }, (error) => {
+                console.error("Помилка завантаження оголошень:", error);
+                ui.announcementsList.innerHTML = '<p class="text-red-500">Помилка завантаження оголошень.</p>';
+            });
+
+            // 2. Слухач чату
+            const chatRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.CHAT);
+            onSnapshot(query(chatRef, orderBy('timestamp', 'asc')), (snapshot) => {
+                renderChat(snapshot.docs);
+                sendNotificationIfNew(snapshot.docs, 'message');
+            }, (error) => {
+                console.error("Помилка завантаження чату:", error);
+                ui.chatMessages.innerHTML = '<p class="text-red-500">Помилка завантаження чату.</p>';
+            });
+            
+            // 3. НОВИЙ Слухач завдань
+            const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.TASKS);
+            onSnapshot(query(tasksRef, orderBy('timestamp', 'desc')), (snapshot) => {
+                renderTasks(snapshot.docs);
+                // (Можна додати сповіщення про нові завдання, якщо потрібно)
+                // sendNotificationIfNew(snapshot.docs, 'task'); 
+            }, (error) => {
+                console.error("Помилка завантаження завдань:", error);
+                ui.tasksList.innerHTML = '<p class="text-red-500">Помилка завантаження завдань.</p>';
+            });
+
+            // 4. Слухач для Адмін-панелі (усі користувачі)
+            if (currentUserRole === 'Admin') {
+                const usersRef = collection(db, 'artifacts', appId, COLLECTIONS.USERS);
+                onSnapshot(query(usersRef), (snapshot) => {
+                    allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Оновлюємо UI користувачів, якщо модальне вікно відкрите
+                    if (!ui.adminModal.classList.contains('hidden')) {
+                        renderUserManagementTab();
+                    }
+                }, (error) => {
+                    console.error("Помилка завантаження користувачів:", error);
+                });
+            }
+        }
+        
+        /**
+         * Запит на дозвіл сповіщень у браузері
+         */
+        function requestNotificationPermission() {
+             if (!("Notification" in window)) {
+                showTempStatus(ui.notificationStatus, "Ваш браузер не підтримує сповіщення.", false);
+            } else if (Notification.permission !== 'granted') {
+                 Notification.requestPermission().then(permission => {
+                      if (permission === 'granted') {
+                           ui.notificationsBtn.textContent = 'Сповіщення увімкнено';
+                           ui.notificationsBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                           ui.notificationsBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                           new Notification("Сповіщення ВГР", { body: "Сповіщення про новини та чат увімкнено!" });
+                      }
+                 });
+            } else {
+                showTempStatus(ui.notificationStatus, "Сповіщення вже увімкнено.", true);
+            }
+        }
+        
+        /**
+         * Надсилання сповіщення при новій події
+         */
+        function sendNotificationIfNew(docs, type) {
+            if (Notification.permission !== 'granted') return;
+            if (docs.length === 0) return;
+
+            // 'announcement' і 'task' сортуються 'desc', 'message' - 'asc'
+            const latestDoc = (type === 'message') ? docs[docs.length - 1] : docs[0];
+            if (!latestDoc) return; 
+            
+            const latestData = latestDoc.data();
+            // Ігноруємо м'яко видалені
+            if (latestData.isDeleted === true) return;
+            
+            const timestamp = latestData.timestamp ? latestData.timestamp.seconds * 1000 : 0;
+            
+            let currentLastTimestamp;
+            let title;
+            let body;
+            
+            if (type === 'announcement') {
+                currentLastTimestamp = lastAnnouncementTimestamp;
+                lastAnnouncementTimestamp = Math.max(currentLastTimestamp || 0, timestamp);
+                
+                // Сповіщення лише про нові (і не від себе)
+                if (timestamp > currentLastTimestamp && currentLastTimestamp !== null && latestData.createdBy !== currentUserId) {
+                    title = `НОВЕ ОГОЛОШЕННЯ: ${latestData.title}`;
+                    body = latestData.body.substring(0, 50) + '...';
+                }
+            } else if (type === 'message') {
+                currentLastTimestamp = lastMessageTimestamp;
+                lastMessageTimestamp = Math.max(currentLastTimestamp || 0, timestamp);
+                
+                // Перевіряємо, чи повідомлення від іншого користувача
+                if (timestamp > currentLastTimestamp && currentLastTimestamp !== null && latestData.userId !== currentUserId) {
+                    title = `НОВЕ ПОВІДОМЛЕННЯ від ${latestData.name || latestData.email}`;
+                    body = latestData.text.substring(0, 50) + '...';
+                }
+            } else if (type === 'task') {
+                // (Логіка для сповіщень про завдання, якщо потрібна)
+            }
+            
+            if (title) {
+                // Відтворення звуку
+                new Audio('https://notificationsounds.com/storage/sounds/download/file-sounds-1222-twinkle.mp3').play().catch(e => console.log('Cannot play sound:', e));
+                
+                // Надсилання сповіщення
+                new Notification(title, { 
+                    body: body,
+                    icon: 'https://placehold.co/128x128/3b82f6/ffffff?text=VGR'
+                });
+            }
+        }
+
+
+        // --- ФУНКЦІЇ РЕНДЕРИНГУ ---
+
+        function renderAnnouncements(docs) {
+            const list = ui.announcementsList;
+            list.innerHTML = '';
+            
+            const validDocs = docs.filter(doc => doc.data().isDeleted !== true);
+
+            if (validDocs.length === 0) {
+                list.innerHTML = '<p class="text-gray-500">Оголошень поки немає.</p>';
+                return;
+            }
+
+            validDocs.forEach(doc => {
+                const ann = doc.data();
+                const annId = doc.id;
+                const date = ann.timestamp ? new Date(ann.timestamp.seconds * 1000).toLocaleString('uk-UA', { dateStyle: 'short', timeStyle: 'short' }) : 'Невідома дата';
+                
+                const isAdminPost = ann.role === 'Admin';
+                const isOwner = ann.createdBy === currentUserId;
+
+                const div = document.createElement('div');
+                div.className = `announcement-item p-3 border rounded-lg shadow-sm ${isAdminPost ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`;
+
+                let authorHtml = `<span class="font-semibold">${ann.author}</span>`;
+                if (isAdminPost) {
+                    authorHtml += ` <span class="text-blue-600 font-bold">(Адмін)</span>`;
+                }
+
+                let buttonsHtml = '';
+                if (isOwner || currentUserRole === 'Admin') {
+                    // Використовуємо зворотні лапки для коректної передачі рядків
+                    buttonsHtml = `
+                        <button class="action-btn edit-btn" onclick="showEditModal('announcement', '${annId}', \`${ann.title}\`, \`${ann.body}\`)">Редагувати</button>
+                        <button class="action-btn delete-btn" onclick="deleteAnnouncement('${annId}')">Видалити</button>
+                    `;
+                }
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="text-xs text-gray-500">${date}</p>
+                        <div>${buttonsHtml}</div>
+                    </div>
+                    <p class="text-sm text-gray-600">Від: ${authorHtml}</p>
+                    <h4 class="font-semibold text-gray-800 mt-1">${ann.title}</h4>
+                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${ann.body}</p>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        function renderChat(docs) {
+            const chatArea = ui.chatMessages;
+            const shouldScroll = chatArea.scrollTop + chatArea.clientHeight >= chatArea.scrollHeight - 50; // Перевірка, чи користувач близько донизу
+            chatArea.innerHTML = '';
+
+            const validDocs = docs.filter(doc => doc.data().isDeleted !== true);
+
+            validDocs.forEach(doc => {
+                const msg = doc.data();
+                const msgId = doc.id;
+                const isMine = msg.userId === currentUserId;
+                const isAdmin = msg.role === 'Admin';
+                const date = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : 'Невідома дата';
+
+                const container = document.createElement('div');
+                container.className = 'message-container';
+
+                const div = document.createElement('div');
+                div.classList.add('p-2', 'max-w-[80%]', 'break-words', 'shadow-sm', 'text-left');
+                div.classList.add(isMine ? 'my-message' : 'bg-gray-100', isMine ? 'rounded-tl-lg' : 'rounded-tr-lg', 'rounded-bl-lg', 'rounded-br-lg');
+                
+                if (isAdmin && !isMine) {
+                    div.classList.add('admin-message');
+                }
+                
+                const senderName = msg.name || msg.email;
+                const senderRole = msg.role === 'Admin' ? ' (Адмін)' : '';
+
+                // Кнопки редагування/видалення
+                let buttonsHtml = '';
+                if (isMine || currentUserRole === 'Admin') {
+                    // Важливо екранувати текст для передачі в onclick
+                    const safeText = msg.text.replace(/[`']/g, '\\$&');
+                    buttonsHtml = `
+                        <button class="action-btn edit-btn" onclick="showEditModal('chat', '${msgId}', \`${safeText}\`)">Ред.</button>
+                        <button class="action-btn delete-btn" onclick="deleteMessage('${msgId}', \`${safeText}\`)">Вид.</button>
+                    `;
+                }
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="text-xs font-semibold ${isAdmin ? 'text-blue-700' : 'text-gray-500'}">
+                            ${senderName}${senderRole} <span class="font-normal text-gray-400">(${date})</span>
+                        </p>
+                        <div>${buttonsHtml}</div>
+                    </div>
+                    <p class="text-sm text-gray-800 whitespace-pre-wrap">${msg.text}</p>
+                `;
+                
+                if (isMine) {
+                    container.classList.add('items-end');
+                } else {
+                    container.classList.add('items-start');
+                }
+                
+                container.appendChild(div);
+                chatArea.appendChild(container);
+            });
+
+            // Прокручування донизу, якщо було близько донизу перед оновленням
+            if (shouldScroll) {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+        }
+
+        /**
+         * НОВЕ: Рендеринг вкладки Завдань
+         */
+        function renderTasks(docs) {
+            const list = ui.tasksList;
+            list.innerHTML = '';
+            
+            const validDocs = docs.filter(doc => doc.data().isDeleted !== true);
+
+            if (validDocs.length === 0) {
+                list.innerHTML = '<p class="text-gray-500">Активних завдань немає.</p>';
+                return;
+            }
+
+            validDocs.forEach(doc => {
+                const task = doc.data();
+                const taskId = doc.id;
+                const isDone = task.isDone === true;
+                const isOwner = task.createdBy === currentUserId;
+
+                const div = document.createElement('div');
+                div.className = `task-item p-4 border rounded-lg flex items-start space-x-4 ${isDone ? 'is-done' : 'bg-white'}`;
+                
+                const date = task.timestamp ? new Date(task.timestamp.seconds * 1000).toLocaleDateString('uk-UA') : '';
+                const author = task.authorName || 'Адмін';
+
+                let deleteButtonHtml = '';
+                if (isOwner || currentUserRole === 'Admin') {
+                    deleteButtonHtml = `<button class="action-btn delete-btn ml-auto" style="display:inline-block;" onclick="deleteTask('${taskId}')">Видалити</button>`;
+                }
+
+                div.innerHTML = `
+                    <input type="checkbox" class="mt-1 h-5 w-5 text-blue-600 rounded" onchange="toggleTaskStatus('${taskId}', ${isDone})" ${isDone ? 'checked' : ''}>
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-center">
+                            <h4 class="task-text text-lg font-semibold text-gray-800">${task.title}</h4>
+                            ${deleteButtonHtml}
+                        </div>
+                        <p class="task-text text-sm text-gray-700 mt-1 mb-2 whitespace-pre-wrap">${task.description}</p>
+                        <p class="text-xs text-gray-400">Створено: ${author} (${date})</p>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        /**
+         * Рендеринг вкладки керування користувачами в адмін-панелі
+         */
+        function renderUserManagementTab() {
+            const container = ui.userListContainer;
+            container.innerHTML = '';
+            
+            const pendingUsers = allUsers.filter(u => !u.isConfirmed);
+            const activeUsers = allUsers.filter(u => u.isConfirmed);
+            
+            ui.pendingCount.textContent = pendingUsers.length;
+            ui.activeCount.textContent = activeUsers.length;
+
+            const renderUserTable = (users, title) => {
+                const tableContainer = document.createElement('div');
+                tableContainer.className = 'mb-6';
+                tableContainer.innerHTML = `<h4 class="text-lg font-bold mb-3 ${title.includes('Очікують') ? 'text-red-600' : 'text-green-600'}">${title} (${users.length})</h4>`;
+                
+                if (users.length === 0) {
+                     tableContainer.innerHTML += `<p class="text-gray-500 p-2 border rounded-lg">${title} відсутні.</p>`;
+                     container.appendChild(tableContainer);
+                     return;
+                }
+
+                const table = document.createElement('table');
+                table.className = 'min-w-full divide-y divide-gray-200 border rounded-lg';
+                table.innerHTML = `
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Інфо (Ім'я/Телефон)</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Email / ID</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Роль</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                `;
+                const tbody = table.querySelector('tbody');
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.className = 'user-row';
+                    
+                    const actions = user.isConfirmed ? 
+                        `<button onclick="confirmUser('${user.id}', false)" class="text-yellow-600 hover:text-yellow-900 text-sm font-medium mr-2">Деактивувати</button>` :
+                        `<button onclick="confirmUser('${user.id}', true)" class="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600 text-xs font-medium mr-2">Підтвердити</button>`;
+
+                    const roleColor = user.role === 'Admin' ? 'text-purple-600 font-bold' : 'text-gray-600';
+
+                    row.innerHTML = `
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900 block">${user.name || 'N/A'}</span>
+                            <span class="text-sm text-gray-500 block">${user.phone || 'Телефон не вказано'}</span>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                            <span class="text-sm text-gray-500 block break-all">${user.email}</span>
+                            <span class="text-xs text-gray-400 block break-all">ID: ${user.id.substring(0, 12)}...</span>
+                            <button class="text-xs text-blue-500 hover:underline" onclick="copyToClipboard('${user.id}')">копіювати ID</button>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm ${roleColor}">${user.role}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                            ${actions}
+                            <button onclick="deleteUserAccount('${user.id}', '${user.email}')" class="text-red-600 hover:text-red-900 text-sm font-medium">Видалити</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                tableContainer.appendChild(table);
+                container.appendChild(tableContainer);
+            };
+            
+            renderUserTable(pendingUsers, 'Користувачі, що Очікують Підтвердження');
+            renderUserTable(activeUsers.sort((a,b) => (a.name || '').localeCompare(b.name || '')), 'Активні Користувачі');
+        }
+
+
+        // --- ФУНКЦІЇ ДІЙ (ЧАТ, ОГОЛОШЕННЯ) ---
+
+        async function sendMessage() {
+            if (!currentUserId || !isConfirmed || !currentUserName) {
+                console.error("Помилка: Користувач не підтверджений або відсутнє ім'я.");
+                showTempStatus(ui.chatStatus, "Помилка відправки: Ви не підтверджені адміністратором! Зверніться до Адміна.", false);
+                return; 
+            }
+
+            const text = ui.chatInput.value.trim();
+            if (text === '') return;
+
+            try {
+                const chatRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.CHAT);
+                await addDoc(chatRef, {
+                    userId: currentUserId,
+                    email: currentUserEmail,
+                    name: currentUserName, // Додаємо ім'я
+                    role: currentUserRole,
+                    text: text,
+                    isDeleted: false, // НОВЕ: для м'якого видалення
+                    timestamp: new Date()
+                });
+                ui.chatInput.value = '';
+            } catch (error) {
+                console.error("Помилка відправки повідомлення:", error);
+                showTempStatus(ui.chatStatus, "Помилка відправки! Ймовірно, блокується Правилами Безпеки.", false);
+            }
+        }
+
+        async function postAnnouncement() {
+            // Тепер доступно всім підтвердженим
+            if (!isConfirmed) {
+                showTempStatus(ui.announcementStatus, "Лише підтверджені користувачі можуть створювати оголошення.", false);
+                return;
+            }
+
+            const title = ui.announcementTitle.value.trim();
+            const body = ui.announcementBody.value.trim();
+
+            if (!title || !body) {
+                showTempStatus(ui.announcementStatus, "Будь ласка, заповніть заголовок та текст оголошення.", false);
+                return;
+            }
+
+            try {
+                const annRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.ANNOUNCEMENTS);
+                await addDoc(annRef, {
+                    title,
+                    body,
+                    author: currentUserName,
+                    createdBy: currentUserId, // НОВЕ: для визначення власника
+                    role: currentUserRole, // НОВЕ: для стилізації
+                    isDeleted: false, // НОВЕ
+                    timestamp: new Date()
+                });
+
+                ui.announcementTitle.value = '';
+                ui.announcementBody.value = '';
+                showTempStatus(ui.announcementStatus, 'Оголошення опубліковано!', true);
+            } catch (error) {
+                console.error("Помилка публікації оголошення:", error);
+                showTempStatus(ui.announcementStatus, "Помилка! Перевірте Правила Безпеки.", false);
+            }
+        }
+
+        // --- НОВІ ФУНКЦІЇ (РЕДАГУВАННЯ/ВИДАЛЕННЯ) ---
+
+        /**
+         * Показати модальне вікно редагування
+         * @param {string} type - 'chat' або 'announcement'
+         * @param {string} docId - ID документа
+         * @param {string} data1 - Текст повідомлення АБО Заголовок оголошення
+         * @param {string} [data2] - Тіло оголошення (тільки для 'announcement')
+         */
+        function showEditModal(type, docId, data1, data2) {
+            if (type === false) { // Для закриття
+                ui.editModal.classList.add('hidden');
+                return;
+            }
+
+            ui.editModalType.value = type;
+            ui.editModalDocId.value = docId;
+            ui.editStatus.classList.add('hidden');
+
+            if (type === 'chat') {
+                ui.editModalTitle.textContent = "Редагувати Повідомлення";
+                ui.editModalTitleGroup.classList.add('hidden');
+                ui.editModalInputBody.value = data1; // data1 - це текст повідомлення
+            } else if (type === 'announcement') {
+                ui.editModalTitle.textContent = "Редагувати Оголошення";
+                ui.editModalTitleGroup.classList.remove('hidden');
+                ui.editModalInputTitle.value = data1; // data1 - це заголовок
+                ui.editModalInputBody.value = data2; // data2 - це тіло
+            }
+            
+            ui.editModal.classList.remove('hidden');
+        }
+
+        /**
+         * Зберегти зміни з модального вікна редагування
+         */
+        async function saveEdit() {
+            const type = ui.editModalType.value;
+            const docId = ui.editModalDocId.value;
+            const body = ui.editModalInputBody.value.trim();
+            
+            let collectionName = '';
+            let dataToUpdate = {};
+
+            try {
+                if (type === 'chat') {
+                    if (body === '') throw new Error("Повідомлення не може бути порожнім.");
+                    collectionName = COLLECTIONS.CHAT;
+                    dataToUpdate = { text: body, updatedAt: new Date() };
+                } else if (type === 'announcement') {
+                    const title = ui.editModalInputTitle.value.trim();
+                    if (title === '' || body === '') throw new Error("Заголовок та текст не можуть бути порожніми.");
+                    collectionName = COLLECTIONS.ANNOUNCEMENTS;
+                    dataToUpdate = { title: title, body: body, updatedAt: new Date() };
+                } else {
+                    return; // Невідомий тип
+                }
+
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', collectionName, docId);
+                await updateDoc(docRef, dataToUpdate);
+                
+                showTempStatus(ui.editStatus, "Зміни збережено!", true);
+                setTimeout(() => showEditModal(false), 1500); // Закрити модальне вікно
+
+            } catch (error) {
+                console.error("Помилка збереження змін:", error);
+                showTempStatus(ui.editStatus, `Помилка: ${error.message}`, false);
+            }
+        }
+
+        /**
+         * М'яке видалення повідомлення
+         */
+        function deleteMessage(docId, text) {
+            showConfirmModal(
+                "Видалити Повідомлення?",
+                `Ви впевнені, що хочете видалити це повідомлення: "${text.substring(0, 30)}..."?`,
+                async () => {
+                    try {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.CHAT, docId);
+                        await updateDoc(docRef, {
+                            isDeleted: true,
+                            updatedAt: new Date()
+                        });
+                        // UI оновить onSnapshot
+                    } catch (error) {
+                        console.error("Помилка видалення повідомлення:", error);
+                        showTempStatus(ui.chatStatus, "Помилка видалення. Перевірте Правила.", false);
+                    }
+                }
+            );
+        }
+
+        /**
+         * М'яке видалення оголошення
+         */
+        function deleteAnnouncement(docId) {
+             showConfirmModal(
+                "Видалити Оголошення?",
+                `Ви впевнені, що хочете видалити це оголошення?`,
+                async () => {
+                    try {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.ANNOUNCEMENTS, docId);
+                        // Використовуємо м'яке видалення
+                        await updateDoc(docRef, {
+                            isDeleted: true,
+                            updatedAt: new Date()
+                        });
+                    } catch (error) {
+                        console.error("Помилка видалення оголошення:", error);
+                        showTempStatus(ui.announcementStatus, "Помилка видалення. Перевірте Правила.", false);
+                    }
+                }
+            );
+        }
+
+        // --- НОВІ ФУНКЦІЇ (ЗАВДАННЯ) ---
+
+        /**
+         * Перемикання головних вкладок (Головна / Завдання)
+         */
+        function switchMainTab(tabName) {
+            document.querySelectorAll('.main-tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.getElementById(`main-tab-${tabName}`).classList.remove('hidden');
+            
+            document.querySelectorAll('#portal-view .flex.border-b > button').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'border-blue-600');
+                btn.classList.add('text-gray-600');
+            });
+            
+            document.getElementById(`nav-btn-${tabName}`).classList.add('text-blue-600', 'border-blue-600');
+            document.getElementById(`nav-btn-${tabName}`).classList.remove('text-gray-600');
+        }
+
+        /**
+         * Створення нового завдання (лише Адмін)
+         */
+        async function createTask() {
+            if (currentUserRole !== 'Admin') return;
+
+            const title = ui.taskTitle.value.trim();
+            const description = ui.taskDescription.value.trim();
+
+            if (!title) {
+                showTempStatus(ui.taskStatus, "Введіть назву завдання.", false);
+                return;
+            }
+            
+            try {
+                const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.TASKS);
+                await addDoc(tasksRef, {
+                    title: title,
+                    description: description,
+                    isDone: false,
+                    isDeleted: false,
+                    createdBy: currentUserId,
+                    authorName: currentUserName,
+                    timestamp: new Date()
+                });
+                
+                ui.taskTitle.value = '';
+                ui.taskDescription.value = '';
+                showTempStatus(ui.taskStatus, "Завдання успішно створено!", true);
+
+            } catch (error) {
+                console.error("Помилка створення завдання:", error);
+                showTempStatus(ui.taskStatus, `Помилка: ${error.message}`, false);
+            }
+        }
+
+        /**
+         * Зміна статусу завдання (Виконано / Не виконано)
+         */
+        async function toggleTaskStatus(taskId, currentStatus) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.TASKS, taskId);
+                await updateDoc(docRef, {
+                    isDone: !currentStatus,
+                    updatedAt: new Date()
+                });
+                // UI оновить onSnapshot
+            } catch (error) {
+                console.error("Помилка оновлення статусу завдання:", error);
+                // Можна показати помилку біля списку завдань, якщо потрібно
+            }
+        }
+
+        /**
+         * Видалення завдання (Адмін або автор)
+         */
+        function deleteTask(taskId) {
+            showConfirmModal(
+                "Видалити Завдання?",
+                `Ви впевнені, що хочете видалити це завдання?`,
+                async () => {
+                    try {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.TASKS, taskId);
+                        // Використовуємо м'яке видалення
+                        await updateDoc(docRef, {
+                            isDeleted: true,
+                            updatedAt: new Date()
+                        });
+                    } catch (error) {
+                        console.error("Помилка видалення завдання:", error);
+                    }
+                }
+            );
+        }
+
+        // --- ФУНКЦІЇ АДМІН-ПАНЕЛІ ---
+
+        /**
+         * Підтвердження/деактивація користувача адміністратором
+         */
+        async function confirmUser(targetId, confirmStatus) {
+            if (currentUserRole !== 'Admin') return;
+            
+            const actionText = confirmStatus ? 'підтвердити' : 'деактивувати';
+            
+            showConfirmModal(
+                `Підтвердження: ${actionText}`,
+                `Ви впевнені, що хочете ${actionText} користувача з ID ${targetId.substring(0, 8)}...?`,
+                async () => { // Це onConfirm колбек
+                    const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, targetId);
+                    try {
+                        await updateDoc(userDocRef, {
+                            isConfirmed: confirmStatus,
+                            updatedAt: new Date()
+                        });
+                        showTempStatus(ui.userListActionStatus, `Користувач ${actionText}но.`, true);
+                    } catch (error) {
+                        console.error(`Помилка при ${actionText} користувача:`, error);
+                        showTempStatus(ui.userListActionStatus, `Помилка: ${error.message}. Перевірте Правила.`, false);
+                    }
+                }
+            );
+        }
+
+        /**
+         * Видалення користувача адміністратором (Видалення профілю Firestore)
+         */
+        async function deleteUserAccount(targetId, targetEmail) {
+            if (currentUserRole !== 'Admin') return;
+
+            showConfirmModal(
+                "Підтвердження Видалення",
+                `УВАГА! Ви впевнені, що хочете видалити профіль ${targetEmail}? (Видаляє дані з Firestore, не видаляє Auth-акаунт)`,
+                async () => { // onConfirm
+                    const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, targetId);
+                    try {
+                        await deleteDoc(userDocRef);
+                        showTempStatus(ui.userListActionStatus, `Профіль ${targetEmail} видалено з Firestore.`, true);
+                    } catch (error) {
+                        console.error("Помилка видалення профілю:", error);
+                        showTempStatus(ui.userListActionStatus, `Помилка видалення: ${error.message}.`, false);
+                    }
+                }
+            );
+        }
+
+        /**
+         * Зміна ролі (використовується в Admins Tab)
+         */
+        async function setUserRole(newRole) {
+            if (currentUserRole !== 'Admin') return;
+
+            const targetId = ui.targetUserId.value.trim();
+            ui.roleStatus.classList.add('hidden');
+
+            if (!targetId) {
+                showTempStatus(ui.roleStatus, "Будь ласка, введіть ID користувача.", false);
+                return;
+            }
+
+            // Шлях до приватного профілю користувача
+            const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, targetId);
+
+            try {
+                await updateDoc(userDocRef, {
+                    role: newRole,
+                    updatedAt: new Date()
+                });
+
+                showTempStatus(ui.roleStatus, `Роль користувача...${targetId.substring(targetId.length - 6)} оновлено на ${newRole}.`, true);
+                ui.targetUserId.value = '';
+            } catch (error) {
+                console.error("Помилка оновлення ролі:", error);
+                showTempStatus(ui.roleStatus, "Помилка: Не вдалося оновити роль. Перевірте Правила.", false);
+            }
+        }
+        
+        // --- ФУНКЦІЇ ПРОФІЛЮ ---
+
+        /**
+         * Керування відображенням модального вікна Профілю
+         */
+        function showProfileModal(show) {
+            if (!currentUserId) return;
+
+            if (show) {
+                // Заповнення полів поточними даними
+                ui.profileNameInput.value = currentUserName;
+                ui.profilePhoneInput.value = currentUserPhone;
+                ui.profilePhotoInput.value = currentUserPhotoURL;
+                ui.profilePhotoInputDisplay.src = currentUserPhotoURL;
+                ui.profileEmailDisplay.textContent = currentUserEmail;
+                ui.profileStatus.classList.add('hidden');
+
+                ui.profileModal.classList.remove('hidden');
+            } else {
+                ui.profileModal.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Збереження налаштувань профілю
+         */
+        async function saveProfileSettings() {
+            if (!currentUserId) return;
+
+            const name = ui.profileNameInput.value.trim();
+            const phone = ui.profilePhoneInput.value.trim();
+            const photoURL = ui.profilePhotoInput.value.trim() || 'https://placehold.co/128x128/ccc/666?text=VGR';
+            
+            if (!name) {
+                showTempStatus(ui.profileStatus, "Ім'я не може бути порожнім.", false);
+                return;
+            }
+
+            const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, currentUserId);
+            
+            try {
+                // 1. Оновлення Auth-профілю (для синхронізації імені та фото)
+                await updateProfile(auth.currentUser, { 
+                    displayName: name,
+                    photoURL: photoURL
+                });
+                
+                // 2. Оновлення Firestore-профілю (для збереження імені, телефону та ролі)
+                await updateDoc(userDocRef, {
+                    name: name,
+                    phone: phone,
+                    photoURL: photoURL,
+                    updatedAt: new Date()
+                });
+                
+                // Оновлення локальних змінних
+                currentUserName = name;
+                currentUserPhone = phone;
+                currentUserPhotoURL = photoURL;
+                
+                // Оновлення UI
+                updateUIForUser();
+                ui.profilePhotoInputDisplay.src = photoURL;
+
+                showTempStatus(ui.profileStatus, "Профіль успішно оновлено!", true);
+
+            } catch (error) {
+                console.error("Помилка збереження профілю:", error);
+                showTempStatus(ui.profileStatus, `Помилка: ${error.message}. Перевірте Правила.`, false);
+            }
+        }
+
+        // --- ФУНКЦІЇ АДМІН-ПАНЕЛІ ---
+
+        /**
+         * Керування відображенням модального вікна Адмін-панелі
+         */
+        function toggleAdminPanel(show) {
+            if (currentUserRole !== 'Admin') return;
+            
+            if (show) {
+                ui.adminModal.classList.remove('hidden');
+                switchAdminTab('users'); // За замовчуванням показуємо вкладку користувачів
+                renderUserManagementTab(); 
+            } else {
+                ui.adminModal.classList.add('hidden');
+            }
+        }
+        
+        /**
+         * Перемикання вкладок в Адмін-панелі (Оголошення видалено)
+         */
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.getElementById(`admin-tab-${tabName}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'border-blue-600');
+                btn.classList.add('text-gray-600');
+            });
+            
+            document.querySelector(`.tab-btn[onclick*="${tabName}"]`).classList.add('text-blue-600', 'border-blue-600');
+            document.querySelector(`.tab-btn[onclick*="${tabName}"]`).classList.remove('text-gray-600');
+            
+            // Спеціальна логіка при перемиканні на вкладку користувачів
+            if (tabName === 'users') {
+                 renderUserManagementTab();
+            }
+        }
+
+
+        // --- ІНІЦІАЛІЗАЦІЯ ---
+        window.onload = initializeAppAndAuth;
+        
+        // Виносимо функції у глобальну область для доступу з HTML (onclick)
+        window.handleAuth = handleAuth;
+        window.signInWithGoogle = signInWithGoogle;
+        window.logout = logout;
+        window.sendMessage = sendMessage;
+        window.postAnnouncement = postAnnouncement;
+        window.setUserRole = setUserRole;
+        window.toggleAdminPanel = toggleAdminPanel;
+        window.switchAdminTab = switchAdminTab;
+        window.confirmUser = confirmUser;
+        window.deleteUserAccount = deleteUserAccount;
+        window.requestNotificationPermission = requestNotificationPermission;
+        window.showProfileModal = showProfileModal;
+        window.saveProfileSettings = saveProfileSettings;
+        window.copyToClipboard = copyToClipboard;
+        
+        // НОВІ ГЛОБАЛЬНІ ФУНКЦІЇ
+        window.switchMainTab = switchMainTab;
+        window.createTask = createTask;
+        window.toggleTaskStatus = toggleTaskStatus;
+        window.deleteTask = deleteTask;
+        window.showEditModal = showEditModal;
+        window.saveEdit = saveEdit;
+        window.deleteMessage = deleteMessage;
+        window.deleteAnnouncement = deleteAnnouncement;
+
+    </script>
+</body>
+</html>
