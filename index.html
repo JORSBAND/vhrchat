@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Змінено назву -->
     <title>ВГР (Розширений функціонал)</title>
-    <!-- Tailwind CSS CDN для стилізації -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Стилі для основної сторінки та модальних вікон */
@@ -15,14 +13,19 @@
         }
         .vgr-card {
             background-color: white;
-            padding: 2rem;
+            padding: 1.5rem; /* Зменшено для мобільних */
             border-radius: 1rem;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            max-width: 90%;
-            width: 500px;
+            width: 100%; /* Повна ширина на мобільних */
+        }
+        @media (min-width: 640px) { /* sm */
+            .vgr-card {
+                padding: 2rem;
+                max-width: 500px;
+            }
         }
         .chat-area {
-            height: 400px;
+            height: 400px; /* Можна налаштувати */
             overflow-y: auto;
             border: 1px solid #e2e8f0;
             padding: 1rem;
@@ -31,14 +34,14 @@
         }
         /* Стиль для повідомлення від Адміна */
         .admin-message {
-            background-color: #e5e7eb; /* Сірий фон для виділення */
+            background-color: #e5e7eb;
             border-left: 4px solid #3b82f6;
             padding: 0.5rem;
             border-radius: 0.5rem;
         }
         /* Стиль для власних повідомлень */
         .my-message {
-            background-color: #bfdbfe; /* Світло-блакитний фон */
+            background-color: #bfdbfe;
             padding: 0.5rem;
             border-radius: 0.5rem;
             text-align: right;
@@ -82,9 +85,18 @@
             margin-left: 0.5rem;
             display: none; /* Приховано за замовчуванням */
         }
-        .message-container:hover .action-btn,
-        .announcement-item:hover .action-btn {
-            display: inline-block; /* Показати при наведенні */
+        /* Показувати кнопки завжди на тач-пристроях для зручності */
+        @media (hover: none) {
+             .action-btn {
+                display: inline-block;
+            }
+        }
+        /* Або показувати при наведенні на десктопі */
+        @media (hover: hover) {
+            .message-container:hover .action-btn,
+            .announcement-item:hover .action-btn {
+                display: inline-block;
+            }
         }
         .edit-btn { color: #2563eb; }
         .edit-btn:hover { color: #1d4ed8; }
@@ -100,28 +112,38 @@
             color: #6b7280;
         }
 
+        /* Адаптивна таблиця в адмін-панелі */
+        .table-responsive-wrapper {
+             overflow-x: auto;
+             -webkit-overflow-scrolling: touch; /* Плавний скрол на iOS */
+             border-radius: 0.5rem; /* Округлення для обгортки */
+             border: 1px solid #e5e7eb; /* Тонка рамка */
+        }
+        .table-responsive-wrapper table {
+             min-width: 600px; /* Мінімальна ширина таблиці, щоб вміст не злипався */
+        }
+
     </style>
 </head>
 <body>
 
     <!-- Основний контейнер додатку -->
-    <div id="app-container" class="min-h-screen flex flex-col items-center py-8 px-4">
+    <div id="app-container" class="min-h-screen flex flex-col items-center py-4 px-2 sm:py-8 sm:px-4">
         
         <!-- Заголовок та статус користувача -->
-        <header class="w-full max-w-5xl bg-white p-4 mb-6 rounded-xl shadow-lg flex justify-between items-center sticky top-0 z-10">
-            <!-- Змінено заголовок -->
-            <h1 class="text-3xl font-extrabold text-blue-800">ВГР</h1>
-            <div id="user-info" class="text-right flex items-center space-x-4">
-                <button id="notifications-btn" class="bg-yellow-500 text-white p-2 rounded-full text-sm font-medium hover:bg-yellow-600 transition duration-200 hidden" onclick="requestNotificationPermission()">
-                    Увімкнути Сповіщення
+        <header class="w-full max-w-5xl bg-white p-3 sm:p-4 mb-4 sm:mb-6 rounded-xl shadow-lg flex flex-wrap justify-between items-center sticky top-0 z-10">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-800 mr-4 mb-2 sm:mb-0">ВГР</h1>
+            <div id="user-info" class="text-right flex items-center space-x-2 sm:space-x-4">
+                <button id="notifications-btn" class="bg-yellow-500 text-white p-2 rounded-full text-xs sm:text-sm font-medium hover:bg-yellow-600 transition duration-200 hidden" onclick="requestNotificationPermission()">
+                    Сповіщення
                 </button>
-                <p id="notification-status" class="text-sm text-green-600 ml-4 hidden"></p>
+                <p id="notification-status" class="text-sm text-green-600 hidden"></p>
                 <!-- Інформація про користувача відображатиметься тут -->
             </div>
         </header>
 
         <!-- Головна зона контенту -->
-        <main id="main-content" class="w-full max-w-5xl bg-white p-6 rounded-xl shadow-lg">
+        <main id="main-content" class="w-full max-w-5xl bg-white p-4 sm:p-6 rounded-xl shadow-lg">
             
             <!-- Стан завантаження -->
             <div id="loading-state" class="text-center py-20">
@@ -130,7 +152,7 @@
             </div>
             
             <!-- Реєстрація / Вхід (відображається, якщо користувач не увійшов) -->
-            <div id="auth-view" class="flex flex-col items-center justify-center p-8 hidden">
+            <div id="auth-view" class="flex flex-col items-center justify-center p-4 sm:p-8 hidden">
                 <div class="vgr-card text-center">
                     <h2 class="text-2xl font-bold mb-6 text-gray-700">Вхід / Реєстрація</h2>
                     <p class="text-sm text-green-600 mb-4">Використовується хмарна база даних Firebase.</p>
@@ -155,7 +177,7 @@
             </div>
 
             <!-- Стан очікування підтвердження -->
-            <div id="pending-view" class="flex flex-col items-center justify-center p-8 hidden">
+            <div id="pending-view" class="flex flex-col items-center justify-center p-4 sm:p-8 hidden">
                 <div class="vgr-card text-center bg-yellow-50 border border-yellow-300">
                     <h2 class="text-2xl font-bold mb-4 text-yellow-700">Очікування Підтвердження</h2>
                     <p class="text-gray-700 mb-4">Ваш обліковий запис було успішно створено, але для доступу до порталу ВГР потрібне підтвердження адміністратором.</p>
@@ -168,32 +190,32 @@
             <div id="portal-view" class="hidden">
                 
                 <!-- НОВА Навігація вкладок (Головна / Завдання) -->
-                <div class="flex border-b mb-6">
-                    <button id="nav-btn-main" class="p-3 mr-4 font-medium text-blue-600 border-b-2 border-blue-600" onclick="switchMainTab('main')">
+                <div class="flex border-b mb-4 sm:mb-6 overflow-x-auto">
+                    <button id="nav-btn-main" class="p-3 mr-2 sm:mr-4 font-medium text-blue-600 border-b-2 border-blue-600 whitespace-nowrap" onclick="switchMainTab('main')">
                         Головна
                     </button>
-                    <button id="nav-btn-tasks" class="p-3 mr-4 font-medium text-gray-600 hover:text-blue-600" onclick="switchMainTab('tasks')">
+                    <button id="nav-btn-tasks" class="p-3 mr-2 sm:mr-4 font-medium text-gray-600 hover:text-blue-600 whitespace-nowrap" onclick="switchMainTab('tasks')">
                         Завдання
                     </button>
                 </div>
 
                 <!-- Вкладка 1: Головна (Чат, Оголошення) -->
                 <div id="main-tab-main" class="main-tab-content">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                         <!-- Колонка 1: Оголошення та Статус -->
-                        <div class="md:col-span-1 flex flex-col space-y-6">
-                            <div class="bg-white p-4 rounded-xl shadow-lg">
-                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Мій Статус</h3>
+                        <div class="md:col-span-1 flex flex-col space-y-4 sm:space-y-6">
+                            <div class="bg-white p-3 sm:p-4 rounded-xl shadow-lg">
+                                <h3 class="text-lg sm:text-xl font-semibold mb-3 text-blue-700">Мій Статус</h3>
                                 <div class="flex items-center mb-3">
-                                    <img id="profile-photo-display" class="w-12 h-12 rounded-full mr-3 border border-gray-300" src="https://placehold.co/128x128/ccc/666?text=VGR" alt="Фото профілю">
+                                    <img id="profile-photo-display" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full mr-3 border border-gray-300 object-cover" src="https://placehold.co/128x128/ccc/666?text=VGR" alt="Фото профілю">
                                     <div>
-                                        <p id="current-user-name" class="text-gray-700 font-medium"></p>
-                                        <p id="current-user-email" class="text-gray-600 text-sm"></p>
+                                        <p id="current-user-name" class="text-gray-700 font-medium text-sm sm:text-base"></p>
+                                        <p id="current-user-email" class="text-gray-600 text-xs sm:text-sm"></p>
                                     </div>
                                 </div>
                                 
-                                <p id="current-user-role" class="text-gray-600">Роль: <span class="font-bold">Завантаження...</span></p>
-                                <p class="text-sm mt-1 text-gray-400 mb-4">ID: <span id="current-user-id" class="break-all"></span></p>
+                                <p id="current-user-role" class="text-gray-600 text-sm sm:text-base">Роль: <span class="font-bold">Завантаження...</span></p>
+                                <p class="text-xs sm:text-sm mt-1 text-gray-400 mb-4">ID: <span id="current-user-id" class="break-all"></span></p>
 
                                 <button onclick="showProfileModal(true)" class="mt-2 bg-purple-500 text-white p-2 rounded-lg text-sm font-medium hover:bg-purple-600 transition duration-200 w-full mb-2">
                                     Мій Профіль
@@ -207,16 +229,16 @@
                             </div>
 
                             <!-- НОВА Форма Створення Оголошення (для всіх) -->
-                            <div class="bg-white p-4 rounded-xl shadow-lg">
-                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Створити Оголошення</h3>
-                                <input type="text" id="announcement-title" placeholder="Заголовок оголошення" class="w-full p-3 mb-3 border rounded-lg">
-                                <textarea id="announcement-body" placeholder="Текст оголошення" rows="3" class="w-full p-3 mb-3 border rounded-lg"></textarea>
-                                <button onclick="postAnnouncement()" class="bg-indigo-600 text-white p-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-200 w-full">Опублікувати</button>
-                                <p id="announcement-status" class="mt-2 text-sm text-green-600 hidden">Оголошення опубліковано!</p>
+                            <div class="bg-white p-3 sm:p-4 rounded-xl shadow-lg">
+                                <h3 class="text-lg sm:text-xl font-semibold mb-3 text-blue-700">Створити Оголошення</h3>
+                                <input type="text" id="announcement-title" placeholder="Заголовок оголошення" class="w-full p-3 mb-3 border rounded-lg text-sm sm:text-base">
+                                <textarea id="announcement-body" placeholder="Текст оголошення" rows="3" class="w-full p-3 mb-3 border rounded-lg text-sm sm:text-base"></textarea>
+                                <button onclick="postAnnouncement()" class="bg-indigo-600 text-white p-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-200 w-full text-sm sm:text-base">Опублікувати</button>
+                                <p id="announcement-status" class="mt-2 text-sm text-green-600 hidden"></p>
                             </div>
 
-                            <div class="bg-white p-4 rounded-xl shadow-lg flex-grow">
-                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Оголошення Спільноти</h3>
+                            <div class="bg-white p-3 sm:p-4 rounded-xl shadow-lg flex-grow">
+                                <h3 class="text-lg sm:text-xl font-semibold mb-3 text-blue-700">Оголошення Спільноти</h3>
                                 <div id="announcements-list" class="space-y-3 max-h-96 overflow-y-auto">
                                     <p class="text-gray-500">Завантаження оголошень...</p>
                                 </div>
@@ -225,15 +247,15 @@
 
                         <!-- Колонка 2: Чат -->
                         <div class="md:col-span-2 flex flex-col">
-                            <div class="bg-white p-4 rounded-xl shadow-lg flex-grow flex flex-col">
-                                <h3 class="text-xl font-semibold mb-3 text-blue-700">Спільний Чат Ради</h3>
+                            <div class="bg-white p-3 sm:p-4 rounded-xl shadow-lg flex-grow flex flex-col">
+                                <h3 class="text-lg sm:text-xl font-semibold mb-3 text-blue-700">Спільний Чат Ради</h3>
                                 <div id="chat-messages" class="chat-area flex-grow mb-4">
                                     <!-- Повідомлення відображаються тут -->
                                     <p class="text-gray-500">Завантаження повідомлень...</p>
                                 </div>
                                 <div class="flex">
-                                    <input type="text" id="chat-input" placeholder="Ваше повідомлення..." class="flex-grow p-3 border border-gray-300 rounded-l-lg focus:ring-blue-500 focus:border-blue-500" onkeypress="if(event.key === 'Enter') sendMessage()">
-                                    <button onclick="sendMessage()" class="bg-blue-600 text-white p-3 rounded-r-lg font-medium hover:bg-blue-700 transition duration-200">Надіслати</button>
+                                    <input type="text" id="chat-input" placeholder="Ваше повідомлення..." class="flex-grow p-3 border border-gray-300 rounded-l-lg focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base" onkeypress="if(event.key === 'Enter') sendMessage()">
+                                    <button onclick="sendMessage()" class="bg-blue-600 text-white px-4 py-3 rounded-r-lg font-medium hover:bg-blue-700 transition duration-200 text-sm sm:text-base">Надіслати</button>
                                 </div>
                                 <p id="chat-status" class="text-red-500 text-sm mt-2 hidden"></p>
                             </div>
@@ -243,19 +265,21 @@
 
                 <!-- Вкладка 2: Завдання -->
                 <div id="main-tab-tasks" class="main-tab-content hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                         <!-- Колонка 1: Створення Завдання (Тільки Адмін) -->
-                        <div id="create-task-panel" class="md:col-span-1 bg-white p-4 rounded-xl shadow-lg hidden">
-                            <h3 class="text-xl font-semibold mb-3 text-blue-700">Створити Завдання</h3>
-                            <input type="text" id="task-title" placeholder="Назва завдання" class="w-full p-3 mb-3 border rounded-lg">
-                            <textarea id="task-description" placeholder="Детальний опис завдання" rows="3" class="w-full p-3 mb-3 border rounded-lg"></textarea>
-                            <button onclick="createTask()" class="bg-green-600 text-white p-3 rounded-lg font-medium hover:bg-green-700 transition duration-200 w-full">Додати Завдання</button>
+                        <div id="create-task-panel" class="md:col-span-1 bg-white p-3 sm:p-4 rounded-xl shadow-lg hidden">
+                            <h3 class="text-lg sm:text-xl font-semibold mb-3 text-blue-700">Створити Завдання</h3>
+                            <input type="text" id="task-title" placeholder="Назва завдання" class="w-full p-3 mb-3 border rounded-lg text-sm sm:text-base">
+                            <textarea id="task-description" placeholder="Детальний опис завдання" rows="3" class="w-full p-3 mb-3 border rounded-lg text-sm sm:text-base"></textarea>
+                            <button onclick="createTask()" class="bg-green-600 text-white p-3 rounded-lg font-medium hover:bg-green-700 transition duration-200 w-full text-sm sm:text-base">Додати Завдання</button>
                             <p id="task-status" class="mt-2 text-sm text-green-600 hidden"></p>
                         </div>
                         
                         <!-- Колонка 2: Список Завдань (для всіх) -->
-                        <div class="md:col-span-2 bg-white p-4 rounded-xl shadow-lg">
-                            <h3 class="text-xl font-semibold mb-3 text-blue-700">Актуальні Завдання</h3>
+                        <!-- Додано 'md:col-span-2' та 'md:col-start-2' якщо панель створення прихована -->
+                        <div class="bg-white p-3 sm:p-4 rounded-xl shadow-lg"
+                             :class="{ 'md:col-span-3': currentUserRole !== 'Admin', 'md:col-span-2': currentUserRole === 'Admin' }">
+                            <h3 class="text-lg sm:text-xl font-semibold mb-3 text-blue-700">Актуальні Завдання</h3>
                             <div id="tasks-list" class="space-y-4">
                                 <p class="text-gray-500">Завантаження завдань...</p>
                             </div>
@@ -265,138 +289,137 @@
             </div>
 
             <!-- Модальне вікно Адмін-панелі -->
-            <div id="admin-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-20 flex justify-center items-center hidden">
-                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto transform transition-all">
+            <div id="admin-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-20 flex justify-center items-center p-2 sm:p-4 hidden">
+                <div class="bg-white p-4 sm:p-8 rounded-xl shadow-2xl w-full max-w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto transform transition-all">
                     <div class="flex justify-between items-center border-b pb-4 mb-6">
-                        <h2 class="text-3xl font-bold text-blue-800">Панель Адміністратора</h2>
+                        <h2 class="text-xl sm:text-3xl font-bold text-blue-800">Панель Адміністратора</h2>
                         <button onclick="toggleAdminPanel(false)" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
                     </div>
 
-                    <!-- Навігація в Адмін-панелі (Видалено вкладку Оголошення) -->
-                    <div class="flex border-b mb-6">
-                        <button class="tab-btn p-3 mr-4 font-medium text-blue-600 border-b-2 border-blue-600" onclick="switchAdminTab('users')">
-                            Керування Користувачами
+                    <!-- Навігація в Адмін-панелі -->
+                    <div class="flex border-b mb-6 overflow-x-auto">
+                        <button class="tab-btn p-3 mr-2 sm:mr-4 font-medium text-blue-600 border-b-2 border-blue-600 whitespace-nowrap text-sm sm:text-base" onclick="switchAdminTab('users')">
+                            Користувачі
                         </button>
-                        <button class="tab-btn p-3 font-medium text-gray-600 hover:text-blue-600" onclick="switchAdminTab('roles')">
-                            Видача Ролей
+                        <button class="tab-btn p-3 mr-2 sm:mr-4 font-medium text-gray-600 hover:text-blue-600 whitespace-nowrap text-sm sm:text-base" onclick="switchAdminTab('roles')">
+                            Ролі
                         </button>
                     </div>
 
                     <!-- 1. Керування Користувачами (Users Tab) -->
                     <div id="admin-tab-users" class="admin-tab-content">
-                        <h3 class="text-xl font-semibold mb-4 text-blue-700">Облікові Записи та Підтвердження</h3>
+                        <h3 class="text-lg sm:text-xl font-semibold mb-4 text-blue-700">Облікові Записи та Підтвердження</h3>
                         
-                        <div class="bg-gray-100 p-4 rounded-lg mb-4 flex justify-between items-center">
-                            <p class="font-medium">Користувачі в очікуванні: <span id="pending-count" class="font-bold text-red-500">0</span></p>
-                            <p class="font-medium">Активні користувачі: <span id="active-count" class="font-bold text-green-500">0</span></p>
+                        <div class="bg-gray-100 p-3 sm:p-4 rounded-lg mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+                            <p class="font-medium text-sm sm:text-base">Очікують: <span id="pending-count" class="font-bold text-red-500">0</span></p>
+                            <p class="font-medium text-sm sm:text-base">Активні: <span id="active-count" class="font-bold text-green-500">0</span></p>
                         </div>
                         
                         <p id="user-list-action-status" class="mt-2 mb-2 text-sm text-green-600 hidden"></p>
 
-                        <div id="user-list-container" class="space-y-2">
-                            <!-- Список користувачів буде завантажено тут -->
-                            <p id="user-list-status" class="text-gray-500">Завантаження списку користувачів...</p>
+                        <!-- Обгортка для адаптивної таблиці -->
+                        <div class="table-responsive-wrapper">
+                            <div id="user-list-container" class="space-y-2">
+                                <p id="user-list-status" class="text-gray-500 p-4">Завантаження списку користувачів...</p>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 2. Створення Оголошення (ВИДАЛЕНО) -->
-                    <div id="admin-tab-announcements" class="admin-tab-content hidden">
-                        <!-- Ця вкладка більше не використовується, форма перенесена на головну -->
-                    </div>
+                    <div id="admin-tab-announcements" class="admin-tab-content hidden"></div>
 
                     <!-- 3. Керування Ролями (Roles Tab) -->
                     <div id="admin-tab-roles" class="admin-tab-content hidden">
                         <div class="p-4 bg-white rounded-lg shadow">
-                            <h3 class="text-xl font-semibold mb-3 text-blue-700">Зміна Ролі за ID</h3>
-                            <p class="text-sm text-gray-500 mb-3">Введіть повний ID користувача (з вкладки "Керування Користувачами"), щоб змінити його роль.</p>
-                            <input type="text" id="target-user-id" placeholder="ID користувача" class="w-full p-3 mb-3 border rounded-lg">
-                            <div class="flex space-x-4">
-                                <button onclick="setUserRole('Admin')" class="flex-1 bg-purple-600 text-white p-3 rounded-lg font-medium hover:bg-purple-700 transition duration-200">Зробити Адміном</button>
-                                <button onclick="setUserRole('Member')" class="flex-1 bg-yellow-600 text-white p-3 rounded-lg font-medium hover:bg-yellow-700 transition duration-200">Зробити Звичайним</button>
+                            <h3 class="text-lg sm:text-xl font-semibold mb-3 text-blue-700">Зміна Ролі за ID</h3>
+                            <p class="text-sm text-gray-500 mb-3">Введіть повний ID користувача (з вкладки "Користувачі"), щоб змінити його роль.</p>
+                            <input type="text" id="target-user-id" placeholder="ID користувача" class="w-full p-3 mb-3 border rounded-lg text-sm sm:text-base">
+                            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                                <button onclick="setUserRole('Admin')" class="flex-1 bg-purple-600 text-white p-3 rounded-lg font-medium hover:bg-purple-700 transition duration-200 text-sm sm:text-base">Зробити Адміном</button>
+                                <button onclick="setUserRole('Member')" class="flex-1 bg-yellow-600 text-white p-3 rounded-lg font-medium hover:bg-yellow-700 transition duration-200 text-sm sm:text-base">Зробити Звичайним</button>
                             </div>
-                            <p id="role-status" class="mt-2 text-sm text-red-500 hidden">Статус ролі.</p>
+                            <p id="role-status" class="mt-2 text-sm text-red-500 hidden"></p>
                         </div>
                     </div>
 
                 </div>
             </div>
             
-            <!-- Модальне вікно Профілю користувача (Новий функціонал) -->
-            <div id="profile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-30 flex justify-center items-center hidden">
-                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <!-- Модальне вікно Профілю користувача -->
+            <div id="profile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-30 flex justify-center items-center p-4 hidden">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-full sm:max-w-md transform transition-all">
                     <div class="flex justify-between items-center border-b pb-4 mb-6">
-                        <h2 class="text-2xl font-bold text-purple-700">Налаштування Профілю</h2>
+                        <h2 class="text-xl sm:text-2xl font-bold text-purple-700">Налаштування Профілю</h2>
                         <button onclick="showProfileModal(false)" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
                     </div>
 
-                    <div class="space-y-4">
+                    <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                         <div class="text-center mb-6">
-                            <img id="profile-photo-input-display" class="w-24 h-24 rounded-full mx-auto border-4 border-purple-300" src="https://placehold.co/128x128/ccc/666?text=VGR" alt="Фото профілю">
-                            <p class="text-sm text-gray-500 mt-2">Ваша електронна пошта: <span id="profile-email-display" class="font-medium text-gray-700"></span></p>
+                            <img id="profile-photo-input-display" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto border-4 border-purple-300 object-cover" src="https://placehold.co/128x128/ccc/666?text=VGR" alt="Фото профілю">
+                            <p class="text-xs sm:text-sm text-gray-500 mt-2">Ваша email: <span id="profile-email-display" class="font-medium text-gray-700 break-all"></span></p>
                         </div>
                         
                         <div>
                             <label for="profile-name-input" class="block text-sm font-medium text-gray-700 mb-1">Ім'я та Прізвище</label>
-                            <input type="text" id="profile-name-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500">
+                            <input type="text" id="profile-name-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base">
                         </div>
                         
                         <div>
                             <label for="profile-phone-input" class="block text-sm font-medium text-gray-700 mb-1">Номер Телефону</label>
-                            <input type="tel" id="profile-phone-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" placeholder="Наприклад: +380XXXXXXXXX">
+                            <input type="tel" id="profile-phone-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base" placeholder="Наприклад: +380XXXXXXXXX">
                         </div>
 
                         <div>
                             <label for="profile-photo-input" class="block text-sm font-medium text-gray-700 mb-1">Посилання на Фото (URL)</label>
-                            <input type="url" id="profile-photo-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" placeholder="https://example.com/photo.jpg">
+                            <input type="url" id="profile-photo-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base" placeholder="https://example.com/photo.jpg">
                         </div>
 
-                        <button onclick="saveProfileSettings()" class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-200 mt-4">
+                        <button onclick="saveProfileSettings()" class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-200 mt-4 text-sm sm:text-base">
                             Зберегти Налаштування
                         </button>
-                        <p id="profile-status" class="mt-2 text-sm text-green-600 hidden text-center">Профіль оновлено!</p>
+                        <p id="profile-status" class="mt-2 text-sm text-green-600 hidden text-center"></p>
                     </div>
                 </div>
             </div>
 
             <!-- Модальне вікно підтвердження -->
-            <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex justify-center items-center hidden">
-                <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm transform transition-all">
+            <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex justify-center items-center p-4 hidden">
+                <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-full sm:max-w-sm transform transition-all">
                     <h3 id="confirm-title" class="text-lg font-bold text-gray-900">Підтвердження Дії</h3>
                     <p id="confirm-text" class="text-sm text-gray-600 mt-2 mb-6">Ви впевнені?</p>
-                    <div class="flex justify-end space-x-3">
-                        <button id="confirm-btn-cancel" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-400">Скасувати</button>
-                        <button id="confirm-btn-ok" class="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700">Підтвердити</button>
+                    <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button id="confirm-btn-cancel" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-400 order-2 sm:order-1 text-sm sm:text-base">Скасувати</button>
+                        <button id="confirm-btn-ok" class="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 order-1 sm:order-2 text-sm sm:text-base">Підтвердити</button>
                     </div>
                 </div>
             </div>
 
-            <!-- НОВЕ Модальне вікно Редагування (для чату/оголошень) -->
-            <div id="edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-40 flex justify-center items-center hidden">
-                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
+            <!-- НОВЕ Модальне вікно Редагування -->
+            <div id="edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-40 flex justify-center items-center p-4 hidden">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-full sm:max-w-lg transform transition-all">
                     <div class="flex justify-between items-center border-b pb-4 mb-6">
-                        <h2 id="edit-modal-title" class="text-2xl font-bold text-blue-700">Редагувати</h2>
+                        <h2 id="edit-modal-title" class="text-xl sm:text-2xl font-bold text-blue-700">Редагувати</h2>
                         <button onclick="showEditModal(false)" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
                     </div>
-                    <!-- Поля для редагування -->
-                    <input type="hidden" id="edit-modal-type">
-                    <input type="hidden" id="edit-modal-doc-id">
-                    
-                    <!-- Поле для Заголовка (для оголошень) -->
-                    <div id="edit-modal-title-group" class="mb-4 hidden">
-                        <label for="edit-modal-input-title" class="block text-sm font-medium text-gray-700 mb-1">Заголовок</labe>
-                        <input type="text" id="edit-modal-input-title" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <div class="max-h-[70vh] overflow-y-auto pr-2">
+                        <input type="hidden" id="edit-modal-type">
+                        <input type="hidden" id="edit-modal-doc-id">
+                        
+                        <div id="edit-modal-title-group" class="mb-4 hidden">
+                            <label for="edit-modal-input-title" class="block text-sm font-medium text-gray-700 mb-1">Заголовок</labe>
+                            <input type="text" id="edit-modal-input-title" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base">
+                        </div>
+                        
+                        <div>
+                            <label for="edit-modal-input-body" class="block text-sm font-medium text-gray-700 mb-1">Текст</labe>
+                            <textarea id="edit-modal-input-body" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"></textarea>
+                        </div>
+                        
+                        <button onclick="saveEdit()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 mt-4 text-sm sm:text-base">
+                            Зберегти Зміни
+                        </button>
+                        <p id="edit-status" class="mt-2 text-sm text-green-600 hidden text-center"></p>
                     </div>
-                    
-                    <!-- Поле для Тексту/Опису -->
-                    <div>
-                        <label for="edit-modal-input-body" class="block text-sm font-medium text-gray-700 mb-1">Текст</labe>
-                        <textarea id="edit-modal-input-body" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
-                    </div>
-                    
-                    <button onclick="saveEdit()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 mt-4">
-                        Зберегти Зміни
-                    </button>
-                    <p id="edit-status" class="mt-2 text-sm text-green-600 hidden text-center"></p>
                 </div>
             </div>
 
@@ -438,11 +461,12 @@
         let currentUserEmail = '';
         let currentUserName = 'Гість';
         let currentUserRole = 'Guest';
-        let currentUserPhone = ''; // Нове поле
-        let currentUserPhotoURL = 'https://placehold.co/128x128/ccc/666?text=VGR'; // Нове поле
+        let currentUserPhone = '';
+        let currentUserPhotoURL = 'https://placehold.co/128x128/ccc/666?text=VGR';
         let isConfirmed = false;
         let isAuthReady = false;
         let allUsers = [];
+        let activityIntervalId = null; // ID для інтервалу автопінгу
 
         const ui = {
             loadingState: document.getElementById('loading-state'),
@@ -452,7 +476,7 @@
             adminModal: document.getElementById('admin-modal'),
             profileModal: document.getElementById('profile-modal'),
             confirmModal: document.getElementById('confirm-modal'),
-            editModal: document.getElementById('edit-modal'), // НОВЕ
+            editModal: document.getElementById('edit-modal'),
             adminPanelBtn: document.getElementById('show-admin-panel-btn'),
             notificationsBtn: document.getElementById('notifications-btn'),
             notificationStatus: document.getElementById('notification-status'), 
@@ -499,7 +523,7 @@
             confirmBtnCancel: document.getElementById('confirm-btn-cancel'),
             confirmBtnOk: document.getElementById('confirm-btn-ok'),
 
-            // Edit Modal UI (НОВЕ)
+            // Edit Modal UI
             editModalTitle: document.getElementById('edit-modal-title'),
             editModalTitleGroup: document.getElementById('edit-modal-title-group'),
             editModalInputTitle: document.getElementById('edit-modal-input-title'),
@@ -508,7 +532,7 @@
             editModalDocId: document.getElementById('edit-modal-doc-id'),
             editStatus: document.getElementById('edit-status'),
 
-            // Tasks UI (НОВЕ)
+            // Tasks UI
             createTaskPanel: document.getElementById('create-task-panel'),
             taskTitle: document.getElementById('task-title'),
             taskDescription: document.getElementById('task-description'),
@@ -520,13 +544,13 @@
             USERS: 'users',
             CHAT: 'chat',
             ANNOUNCEMENTS: 'announcements',
-            TASKS: 'tasks' // НОВА КОЛЕКЦІЯ
+            TASKS: 'tasks'
         };
         
-        // Зберігаємо останній час оголошення для сповіщень
+        // Зберігаємо останній час подій для сповіщень
         let lastAnnouncementTimestamp = null;
         let lastMessageTimestamp = null;
-        let lastTaskTimestamp = null; // НОВЕ
+        let lastTaskTimestamp = null;
 
         // --- ДОПОМІЖНІ ФУНКЦІЇ ---
 
@@ -548,12 +572,12 @@
         }
 
         /**
-         * Помічник для копіювання в буфер обміну (використовує execCommand для сумісності з iFrame)
+         * Помічник для копіювання в буфер обміну
          */
         function copyToClipboard(text) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style.position = "fixed";  // Уникаємо прокручування
+            textArea.style.position = "fixed"; 
             textArea.style.opacity = "0";
             document.body.appendChild(textArea);
             textArea.focus();
@@ -644,13 +668,18 @@
             ui.portalView.classList.add('hidden');
             ui.pendingView.classList.add('hidden');
 
+            // Зупиняємо попередній інтервал активності, якщо він був
+            if (activityIntervalId) {
+                clearInterval(activityIntervalId);
+                activityIntervalId = null;
+            }
+
             if (user && user.isAnonymous === false) { // Перевіряємо, чи це реальний користувач
                 currentUserId = user.uid;
                 currentUserEmail = user.email;
                 currentUserName = user.displayName || 'Користувач ВГР';
                 
                 // 1. Отримати дані користувача (роль, статус підтвердження)
-                // Передаємо null для phoneFromRegistration, оскільки це не реєстрація
                 await fetchAndSetUserData(currentUserId, currentUserEmail, currentUserName, null); 
                 
                 // 2. Вирішити, який екран показати
@@ -658,8 +687,13 @@
                     // Користувач підтверджений
                     ui.portalView.classList.remove('hidden');
                     updateUIForUser();
-                    setupListeners(); // Встановлюємо слухачі лише для підтверджених користувачів
+                    setupListeners(); // Встановлюємо слухачі
                     switchMainTab('main'); // Активуємо головну вкладку
+
+                    // Запускаємо інтервал оновлення активності
+                    updateUserActivity(); // Перший виклик одразу
+                    activityIntervalId = setInterval(updateUserActivity, 10 * 60 * 1000); // Кожні 10 хвилин
+
                 } else {
                     // Користувач очікує підтвердження
                     ui.pendingView.classList.remove('hidden');
@@ -667,7 +701,7 @@
                 }
 
             } else {
-                // Користувач вийшов
+                // Користувач вийшов або анонімний
                 currentUserId = null;
                 currentUserEmail = '';
                 currentUserName = 'Гість';
@@ -689,14 +723,14 @@
                 ui.currentUserEmailDisplay.textContent = currentUserEmail;
                 ui.currentUserNameDisplay.textContent = currentUserName;
                 ui.currentUserRoleDisplay.innerHTML = `Роль: <span class="font-bold">${currentUserRole}</span>`;
-                ui.profilePhotoDisplay.src = currentUserPhotoURL; // Оновлення фото на головній
+                ui.profilePhotoDisplay.src = currentUserPhotoURL; 
                 
                 if (currentUserRole === 'Admin' && isConfirmed) {
                     ui.adminPanelBtn.classList.remove('hidden');
-                    ui.createTaskPanel.classList.remove('hidden'); // НОВЕ: Показати адмінам форму завдань
+                    ui.createTaskPanel.classList.remove('hidden');
                 } else {
                     ui.adminPanelBtn.classList.add('hidden');
-                    ui.createTaskPanel.classList.add('hidden'); // НОВЕ: Приховати від інших
+                    ui.createTaskPanel.classList.add('hidden');
                 }
             } else {
                  ui.currentUserRoleDisplay.innerHTML = `Роль: <span class="font-bold">Гість</span>`;
@@ -736,6 +770,9 @@
                     let phone = phoneFromRegistration || auth.currentUser?.phoneNumber || '';
                     if (!phone) {
                         phone = prompt("Введіть Ваш номер телефону (обов'язково для реєстрації):", "");
+                        // Важливо: Якщо користувач скасує ввід телефону, реєстрація може бути незавершеною.
+                        // Потрібно або зробити поле необов'язковим, або обробити скасування.
+                        // Для простоти поки залишаємо так.
                     }
                     
                     await setDoc(userDocRef, {
@@ -745,7 +782,8 @@
                         phone: phone || '', // Зберігаємо номер
                         photoURL: defaultPhoto, // Зберігаємо фото
                         isConfirmed: false,
-                        createdAt: new Date()
+                        createdAt: new Date(),
+                        lastActive: new Date() // Додаємо поле активності
                     });
                     currentUserPhone = phone;
                 }
@@ -826,10 +864,13 @@
                      if (name && name.trim() !== '') {
                           await updateProfile(user, { displayName: name });
                           currentUserName = name;
+                     } else {
+                         // Якщо ім'я не введено, можливо, краще скасувати вхід або використати email
+                         name = user.email; // Як запасний варіант
                      }
                 }
 
-                // 2. Створюємо/оновлюємо профіль у Firestore (телефон запитає всередині fetchAndSetUserData, якщо його немає)
+                // 2. Створюємо/оновлюємо профіль у Firestore
                 await fetchAndSetUserData(user.uid, user.email, name, null);
 
             } catch (error) {
@@ -838,15 +879,41 @@
             }
         }
 
+        /**
+         * Вихід з системи
+         */
         function logout() {
-            signOut(auth);
-            toggleAdminPanel(false); // Закриваємо адмін-панель при виході
-            showProfileModal(false); // Закриваємо профіль при виході
+            signOut(auth); // Це автоматично викличе handleAuthStateChange
+            // Закриваємо модальні вікна
+            toggleAdminPanel(false);
+            showProfileModal(false);
+            showEditModal(false);
         }
 
+        /**
+         * Відображення помилок автентифікації
+         */
         function showError(message) {
             ui.authError.textContent = message;
             ui.authError.classList.remove('hidden');
+        }
+
+        // --- АВТОПІНГ АКТИВНОСТІ ---
+        /**
+         * Оновлює поле lastActive у профілі користувача
+         */
+        async function updateUserActivity() {
+            if (!currentUserId || !db) return;
+            const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, currentUserId);
+            try {
+                await updateDoc(userDocRef, {
+                    lastActive: new Date()
+                });
+                console.log('User activity updated.'); // Лог для перевірки
+            } catch (error) {
+                // Не показуємо помилку користувачу, логуємо в консоль
+                console.error("Failed to update user activity:", error);
+            }
         }
 
 
@@ -879,7 +946,6 @@
             const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.TASKS);
             onSnapshot(query(tasksRef, orderBy('timestamp', 'desc')), (snapshot) => {
                 renderTasks(snapshot.docs);
-                // (Можна додати сповіщення про нові завдання, якщо потрібно)
                 // sendNotificationIfNew(snapshot.docs, 'task'); 
             }, (error) => {
                 console.error("Помилка завантаження завдань:", error);
@@ -897,6 +963,7 @@
                     }
                 }, (error) => {
                     console.error("Помилка завантаження користувачів:", error);
+                    // Можна додати повідомлення про помилку в адмін-панелі
                 });
             }
         }
@@ -907,61 +974,65 @@
         function requestNotificationPermission() {
              if (!("Notification" in window)) {
                 showTempStatus(ui.notificationStatus, "Ваш браузер не підтримує сповіщення.", false);
-            } else if (Notification.permission !== 'granted') {
+             } else if (Notification.permission !== 'granted') {
                  Notification.requestPermission().then(permission => {
                       if (permission === 'granted') {
-                           ui.notificationsBtn.textContent = 'Сповіщення увімкнено';
-                           ui.notificationsBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                           ui.notificationsBtn.classList.add('bg-green-500', 'hover:bg-green-600');
-                           new Notification("Сповіщення ВГР", { body: "Сповіщення про новини та чат увімкнено!" });
+                          ui.notificationsBtn.textContent = 'Сповіщення увімкнено';
+                          ui.notificationsBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                          ui.notificationsBtn.classList.add('bg-green-500', 'cursor-default'); // Змінено стиль
+                          new Notification("Сповіщення ВГР", { body: "Сповіщення про новини та чат увімкнено!" });
+                      } else {
+                          showTempStatus(ui.notificationStatus, "Ви не надали дозвіл на сповіщення.", false);
                       }
                  });
-            } else {
+             } else {
+                // Якщо дозвіл вже є, змінюємо стиль кнопки
+                ui.notificationsBtn.textContent = 'Сповіщення увімкнено';
+                ui.notificationsBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                ui.notificationsBtn.classList.add('bg-green-500', 'cursor-default');
                 showTempStatus(ui.notificationStatus, "Сповіщення вже увімкнено.", true);
-            }
+             }
         }
         
         /**
          * Надсилання сповіщення при новій події
          */
         function sendNotificationIfNew(docs, type) {
-            if (Notification.permission !== 'granted') return;
+            if (Notification.permission !== 'granted' || document.hasFocus()) return; // Не надсилати, якщо вкладка активна
             if (docs.length === 0) return;
 
-            // 'announcement' і 'task' сортуються 'desc', 'message' - 'asc'
             const latestDoc = (type === 'message') ? docs[docs.length - 1] : docs[0];
             if (!latestDoc) return; 
             
             const latestData = latestDoc.data();
-            // Ігноруємо м'яко видалені
-            if (latestData.isDeleted === true) return;
+            if (latestData.isDeleted === true) return; // Ігноруємо видалені
             
             const timestamp = latestData.timestamp ? latestData.timestamp.seconds * 1000 : 0;
             
             let currentLastTimestamp;
             let title;
             let body;
+            let senderId = latestData.userId || latestData.createdBy; // ID автора
             
+            // Не показувати сповіщення від себе
+            if (senderId === currentUserId) return;
+
             if (type === 'announcement') {
                 currentLastTimestamp = lastAnnouncementTimestamp;
                 lastAnnouncementTimestamp = Math.max(currentLastTimestamp || 0, timestamp);
-                
-                // Сповіщення лише про нові (і не від себе)
-                if (timestamp > currentLastTimestamp && currentLastTimestamp !== null && latestData.createdBy !== currentUserId) {
+                if (timestamp > currentLastTimestamp && currentLastTimestamp !== null) {
                     title = `НОВЕ ОГОЛОШЕННЯ: ${latestData.title}`;
                     body = latestData.body.substring(0, 50) + '...';
                 }
             } else if (type === 'message') {
                 currentLastTimestamp = lastMessageTimestamp;
                 lastMessageTimestamp = Math.max(currentLastTimestamp || 0, timestamp);
-                
-                // Перевіряємо, чи повідомлення від іншого користувача
-                if (timestamp > currentLastTimestamp && currentLastTimestamp !== null && latestData.userId !== currentUserId) {
+                if (timestamp > currentLastTimestamp && currentLastTimestamp !== null) {
                     title = `НОВЕ ПОВІДОМЛЕННЯ від ${latestData.name || latestData.email}`;
                     body = latestData.text.substring(0, 50) + '...';
                 }
             } else if (type === 'task') {
-                // (Логіка для сповіщень про завдання, якщо потрібна)
+                // Логіка сповіщень для завдань (якщо треба)
             }
             
             if (title) {
@@ -971,7 +1042,7 @@
                 // Надсилання сповіщення
                 new Notification(title, { 
                     body: body,
-                    icon: 'https://placehold.co/128x128/3b82f6/ffffff?text=VGR'
+                    icon: 'https://placehold.co/128x128/3b82f6/ffffff?text=VGR' // Можна додати фото відправника latestData.photoURL
                 });
             }
         }
@@ -979,6 +1050,9 @@
 
         // --- ФУНКЦІЇ РЕНДЕРИНГУ ---
 
+        /**
+         * Рендеринг оголошень
+         */
         function renderAnnouncements(docs) {
             const list = ui.announcementsList;
             list.innerHTML = '';
@@ -986,7 +1060,7 @@
             const validDocs = docs.filter(doc => doc.data().isDeleted !== true);
 
             if (validDocs.length === 0) {
-                list.innerHTML = '<p class="text-gray-500">Оголошень поки немає.</p>';
+                list.innerHTML = '<p class="text-gray-500 text-sm sm:text-base">Оголошень поки немає.</p>';
                 return;
             }
 
@@ -1010,24 +1084,27 @@
                 if (isOwner || currentUserRole === 'Admin') {
                     // Використовуємо зворотні лапки для коректної передачі рядків
                     buttonsHtml = `
-                        <button class="action-btn edit-btn" onclick="showEditModal('announcement', '${annId}', \`${ann.title}\`, \`${ann.body}\`)">Редагувати</button>
-                        <button class="action-btn delete-btn" onclick="deleteAnnouncement('${annId}')">Видалити</button>
+                        <button class="action-btn edit-btn" onclick="showEditModal('announcement', '${annId}', \`${ann.title}\`, \`${ann.body}\`)">Ред.</button>
+                        <button class="action-btn delete-btn" onclick="deleteAnnouncement('${annId}')">Вид.</button>
                     `;
                 }
 
                 div.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
                         <p class="text-xs text-gray-500">${date}</p>
-                        <div>${buttonsHtml}</div>
+                        <div class="flex-shrink-0">${buttonsHtml}</div>
                     </div>
-                    <p class="text-sm text-gray-600">Від: ${authorHtml}</p>
-                    <h4 class="font-semibold text-gray-800 mt-1">${ann.title}</h4>
-                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${ann.body}</p>
+                    <p class="text-xs sm:text-sm text-gray-600">Від: ${authorHtml}</p>
+                    <h4 class="font-semibold text-gray-800 mt-1 text-sm sm:text-base">${ann.title}</h4>
+                    <p class="text-sm text-gray-700 whitespace-pre-wrap mt-1">${ann.body}</p>
                 `;
                 list.appendChild(div);
             });
         }
         
+        /**
+         * Рендеринг чату
+         */
         function renderChat(docs) {
             const chatArea = ui.chatMessages;
             const shouldScroll = chatArea.scrollTop + chatArea.clientHeight >= chatArea.scrollHeight - 50; // Перевірка, чи користувач близько донизу
@@ -1035,19 +1112,24 @@
 
             const validDocs = docs.filter(doc => doc.data().isDeleted !== true);
 
+             if (validDocs.length === 0) {
+                 chatArea.innerHTML = '<p class="text-gray-500 text-center p-4">Повідомлень немає.</p>';
+                 return;
+             }
+
             validDocs.forEach(doc => {
                 const msg = doc.data();
                 const msgId = doc.id;
                 const isMine = msg.userId === currentUserId;
                 const isAdmin = msg.role === 'Admin';
-                const date = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : 'Невідома дата';
+                const date = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : '?';
 
                 const container = document.createElement('div');
-                container.className = 'message-container';
+                container.className = 'message-container relative'; // Додано relative для позиціонування кнопок
 
                 const div = document.createElement('div');
-                div.classList.add('p-2', 'max-w-[80%]', 'break-words', 'shadow-sm', 'text-left');
-                div.classList.add(isMine ? 'my-message' : 'bg-gray-100', isMine ? 'rounded-tl-lg' : 'rounded-tr-lg', 'rounded-bl-lg', 'rounded-br-lg');
+                div.classList.add('p-2', 'max-w-[80%]', 'break-words', 'shadow-sm', 'text-left', 'rounded-lg');
+                div.classList.add(isMine ? 'my-message' : 'bg-gray-100');
                 
                 if (isAdmin && !isMine) {
                     div.classList.add('admin-message');
@@ -1060,30 +1142,31 @@
                 let buttonsHtml = '';
                 if (isMine || currentUserRole === 'Admin') {
                     // Важливо екранувати текст для передачі в onclick
-                    const safeText = msg.text.replace(/[`']/g, '\\$&');
+                    const safeText = msg.text.replace(/[`']/g, '\\$&'); // Екрануємо ' та `
                     buttonsHtml = `
-                        <button class="action-btn edit-btn" onclick="showEditModal('chat', '${msgId}', \`${safeText}\`)">Ред.</button>
-                        <button class="action-btn delete-btn" onclick="deleteMessage('${msgId}', \`${safeText}\`)">Вид.</button>
+                        <div class="absolute ${isMine ? 'left-1 -top-2' : 'right-1 -top-2'} flex space-x-1 z-10">
+                           <button class="action-btn edit-btn bg-white rounded p-1 shadow" onclick="showEditModal('chat', '${msgId}', \`${safeText}\`)">✏️</button>
+                           <button class="action-btn delete-btn bg-white rounded p-1 shadow" onclick="deleteMessage('${msgId}', \`${safeText}\`)">🗑️</button>
+                        </div>
                     `;
                 }
 
                 div.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <p class="text-xs font-semibold ${isAdmin ? 'text-blue-700' : 'text-gray-500'}">
-                            ${senderName}${senderRole} <span class="font-normal text-gray-400">(${date})</span>
-                        </p>
-                        <div>${buttonsHtml}</div>
-                    </div>
-                    <p class="text-sm text-gray-800 whitespace-pre-wrap">${msg.text}</p>
+                    <p class="text-xs font-semibold ${isAdmin ? 'text-blue-700' : 'text-gray-500'} mb-1">
+                        ${senderName}${senderRole} <span class="font-normal text-gray-400">(${date})</span>
+                    </p>
+                    <p class="text-sm sm:text-base text-gray-800 whitespace-pre-wrap">${msg.text}</p>
                 `;
                 
+                container.innerHTML = buttonsHtml; // Додаємо кнопки *перед* повідомленням у DOM контейнера
+
                 if (isMine) {
                     container.classList.add('items-end');
                 } else {
                     container.classList.add('items-start');
                 }
                 
-                container.appendChild(div);
+                container.appendChild(div); // Додаємо саме повідомлення
                 chatArea.appendChild(container);
             });
 
@@ -1094,7 +1177,7 @@
         }
 
         /**
-         * НОВЕ: Рендеринг вкладки Завдань
+         * Рендеринг вкладки Завдань
          */
         function renderTasks(docs) {
             const list = ui.tasksList;
@@ -1103,7 +1186,7 @@
             const validDocs = docs.filter(doc => doc.data().isDeleted !== true);
 
             if (validDocs.length === 0) {
-                list.innerHTML = '<p class="text-gray-500">Активних завдань немає.</p>';
+                list.innerHTML = '<p class="text-gray-500 text-sm sm:text-base">Активних завдань немає.</p>';
                 return;
             }
 
@@ -1114,24 +1197,25 @@
                 const isOwner = task.createdBy === currentUserId;
 
                 const div = document.createElement('div');
-                div.className = `task-item p-4 border rounded-lg flex items-start space-x-4 ${isDone ? 'is-done' : 'bg-white'}`;
+                div.className = `task-item p-3 sm:p-4 border rounded-lg flex items-start space-x-3 sm:space-x-4 ${isDone ? 'is-done' : 'bg-white'}`;
                 
                 const date = task.timestamp ? new Date(task.timestamp.seconds * 1000).toLocaleDateString('uk-UA') : '';
                 const author = task.authorName || 'Адмін';
 
                 let deleteButtonHtml = '';
-                if (isOwner || currentUserRole === 'Admin') {
-                    deleteButtonHtml = `<button class="action-btn delete-btn ml-auto" style="display:inline-block;" onclick="deleteTask('${taskId}')">Видалити</button>`;
+                // Видалити може адмін АБО автор (тільки якщо завдання не виконане)
+                if (currentUserRole === 'Admin' || (isOwner && !isDone)) {
+                    deleteButtonHtml = `<button class="action-btn delete-btn ml-auto text-xs sm:text-sm" style="display:inline-block;" onclick="deleteTask('${taskId}')">Видалити</button>`;
                 }
 
                 div.innerHTML = `
-                    <input type="checkbox" class="mt-1 h-5 w-5 text-blue-600 rounded" onchange="toggleTaskStatus('${taskId}', ${isDone})" ${isDone ? 'checked' : ''}>
-                    <div class="flex-grow">
-                        <div class="flex justify-between items-center">
-                            <h4 class="task-text text-lg font-semibold text-gray-800">${task.title}</h4>
+                    <input type="checkbox" class="mt-1 h-5 w-5 text-blue-600 rounded flex-shrink-0" onchange="toggleTaskStatus('${taskId}', ${isDone})" ${isDone ? 'checked' : ''}>
+                    <div class="flex-grow min-w-0"> 
+                        <div class="flex justify-between items-start">
+                            <h4 class="task-text text-base sm:text-lg font-semibold text-gray-800 break-words">${task.title}</h4>
                             ${deleteButtonHtml}
                         </div>
-                        <p class="task-text text-sm text-gray-700 mt-1 mb-2 whitespace-pre-wrap">${task.description}</p>
+                        <p class="task-text text-sm text-gray-700 mt-1 mb-2 whitespace-pre-wrap break-words">${task.description}</p>
                         <p class="text-xs text-gray-400">Створено: ${author} (${date})</p>
                     </div>
                 `;
@@ -1144,7 +1228,7 @@
          */
         function renderUserManagementTab() {
             const container = ui.userListContainer;
-            container.innerHTML = '';
+            container.innerHTML = ''; // Очищуємо перед рендерингом
             
             const pendingUsers = allUsers.filter(u => !u.isConfirmed);
             const activeUsers = allUsers.filter(u => u.isConfirmed);
@@ -1155,73 +1239,79 @@
             const renderUserTable = (users, title) => {
                 const tableContainer = document.createElement('div');
                 tableContainer.className = 'mb-6';
-                tableContainer.innerHTML = `<h4 class="text-lg font-bold mb-3 ${title.includes('Очікують') ? 'text-red-600' : 'text-green-600'}">${title} (${users.length})</h4>`;
+                tableContainer.innerHTML = `<h4 class="text-base sm:text-lg font-bold mb-3 ${title.includes('Очікують') ? 'text-red-600' : 'text-green-600'}">${title} (${users.length})</h4>`;
                 
                 if (users.length === 0) {
-                     tableContainer.innerHTML += `<p class="text-gray-500 p-2 border rounded-lg">${title} відсутні.</p>`;
+                     tableContainer.innerHTML += `<p class="text-gray-500 p-2 border rounded-lg text-sm sm:text-base">${title} відсутні.</p>`;
                      container.appendChild(tableContainer);
                      return;
                 }
 
+                // Таблиця всередині обгортки
                 const table = document.createElement('table');
-                table.className = 'min-w-full divide-y divide-gray-200 border rounded-lg';
+                table.className = 'min-w-full divide-y divide-gray-200 bg-white'; // Додано bg-white
                 table.innerHTML = `
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Інфо (Ім'я/Телефон)</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Email / ID</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Роль</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Дії</th>
+                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Інфо</th>
+                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Контакти</th>
+                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Роль</th>
+                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дії</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-200">
                     </tbody>
                 `;
                 const tbody = table.querySelector('tbody');
 
-                users.forEach(user => {
+                users.sort((a,b) => (a.name || '').localeCompare(b.name || '')).forEach(user => {
                     const row = document.createElement('tr');
                     row.className = 'user-row';
                     
                     const actions = user.isConfirmed ? 
-                        `<button onclick="confirmUser('${user.id}', false)" class="text-yellow-600 hover:text-yellow-900 text-sm font-medium mr-2">Деактивувати</button>` :
-                        `<button onclick="confirmUser('${user.id}', true)" class="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600 text-xs font-medium mr-2">Підтвердити</button>`;
+                        `<button onclick="confirmUser('${user.id}', false)" class="text-yellow-600 hover:text-yellow-900 text-xs sm:text-sm font-medium mr-2 whitespace-nowrap">Деактив.</button>` :
+                        `<button onclick="confirmUser('${user.id}', true)" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 text-xs font-medium mr-2 whitespace-nowrap">Підтв.</button>`;
 
                     const roleColor = user.role === 'Admin' ? 'text-purple-600 font-bold' : 'text-gray-600';
 
                     row.innerHTML = `
                         <td class="px-3 py-2 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900 block">${user.name || 'N/A'}</span>
-                            <span class="text-sm text-gray-500 block">${user.phone || 'Телефон не вказано'}</span>
+                            <div class="flex items-center">
+                                <img class="h-8 w-8 rounded-full object-cover mr-2" src="${user.photoURL || 'https://placehold.co/40x40/ccc/666?text=?'}" alt="">
+                                <span class="text-xs sm:text-sm font-medium text-gray-900 block truncate">${user.name || 'N/A'}</span>
+                            </div>
                         </td>
-                        <td class="px-3 py-2 whitespace-nowrap">
-                            <span class="text-sm text-gray-500 block break-all">${user.email}</span>
-                            <span class="text-xs text-gray-400 block break-all">ID: ${user.id.substring(0, 12)}...</span>
-                            <button class="text-xs text-blue-500 hover:underline" onclick="copyToClipboard('${user.id}')">копіювати ID</button>
+                        <td class="px-3 py-2">
+                            <span class="text-xs sm:text-sm text-gray-500 block break-all">${user.email}</span>
+                            <span class="text-xs text-gray-400 block">${user.phone || ''}</span>
+                            <button class="text-xs text-blue-500 hover:underline mt-1" onclick="copyToClipboard('${user.id}')" title="${user.id}">коп. ID</button>
                         </td>
-                        <td class="px-3 py-2 whitespace-nowrap text-sm ${roleColor}">${user.role}</td>
-                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                        <td class="px-3 py-2 whitespace-nowrap text-xs sm:text-sm ${roleColor} hidden sm:table-cell">${user.role}</td>
+                        <td class="px-3 py-2 whitespace-nowrap font-medium">
                             ${actions}
-                            <button onclick="deleteUserAccount('${user.id}', '${user.email}')" class="text-red-600 hover:text-red-900 text-sm font-medium">Видалити</button>
+                            <button onclick="deleteUserAccount('${user.id}', '${user.email}')" class="text-red-600 hover:text-red-900 text-xs sm:text-sm font-medium whitespace-nowrap">Видалити</button>
                         </td>
                     `;
                     tbody.appendChild(row);
                 });
-                tableContainer.appendChild(table);
-                container.appendChild(tableContainer);
+                tableContainer.appendChild(table); // Додаємо таблицю до контейнера
+                container.appendChild(tableContainer); // Додаємо контейнер до основного блоку
             };
             
             renderUserTable(pendingUsers, 'Користувачі, що Очікують Підтвердження');
-            renderUserTable(activeUsers.sort((a,b) => (a.name || '').localeCompare(b.name || '')), 'Активні Користувачі');
+            renderUserTable(activeUsers, 'Активні Користувачі');
         }
 
 
         // --- ФУНКЦІЇ ДІЙ (ЧАТ, ОГОЛОШЕННЯ) ---
 
+        /**
+         * Відправка повідомлення в чат
+         */
         async function sendMessage() {
             if (!currentUserId || !isConfirmed || !currentUserName) {
                 console.error("Помилка: Користувач не підтверджений або відсутнє ім'я.");
-                showTempStatus(ui.chatStatus, "Помилка відправки: Ви не підтверджені адміністратором! Зверніться до Адміна.", false);
+                showTempStatus(ui.chatStatus, "Помилка відправки: Ви не підтверджені адміністратором!", false);
                 return; 
             }
 
@@ -1233,21 +1323,23 @@
                 await addDoc(chatRef, {
                     userId: currentUserId,
                     email: currentUserEmail,
-                    name: currentUserName, // Додаємо ім'я
+                    name: currentUserName, 
                     role: currentUserRole,
                     text: text,
-                    isDeleted: false, // НОВЕ: для м'якого видалення
+                    isDeleted: false,
                     timestamp: new Date()
                 });
                 ui.chatInput.value = '';
             } catch (error) {
                 console.error("Помилка відправки повідомлення:", error);
-                showTempStatus(ui.chatStatus, "Помилка відправки! Ймовірно, блокується Правилами Безпеки.", false);
+                showTempStatus(ui.chatStatus, "Помилка відправки!", false);
             }
         }
 
+        /**
+         * Публікація оголошення (доступно всім)
+         */
         async function postAnnouncement() {
-            // Тепер доступно всім підтвердженим
             if (!isConfirmed) {
                 showTempStatus(ui.announcementStatus, "Лише підтверджені користувачі можуть створювати оголошення.", false);
                 return;
@@ -1267,9 +1359,9 @@
                     title,
                     body,
                     author: currentUserName,
-                    createdBy: currentUserId, // НОВЕ: для визначення власника
-                    role: currentUserRole, // НОВЕ: для стилізації
-                    isDeleted: false, // НОВЕ
+                    createdBy: currentUserId,
+                    role: currentUserRole,
+                    isDeleted: false,
                     timestamp: new Date()
                 });
 
@@ -1278,18 +1370,14 @@
                 showTempStatus(ui.announcementStatus, 'Оголошення опубліковано!', true);
             } catch (error) {
                 console.error("Помилка публікації оголошення:", error);
-                showTempStatus(ui.announcementStatus, "Помилка! Перевірте Правила Безпеки.", false);
+                showTempStatus(ui.announcementStatus, "Помилка!", false);
             }
         }
 
-        // --- НОВІ ФУНКЦІЇ (РЕДАГУВАННЯ/ВИДАЛЕННЯ) ---
+        // --- ФУНКЦІЇ РЕДАГУВАННЯ/ВИДАЛЕННЯ ---
 
         /**
-         * Показати модальне вікно редагування
-         * @param {string} type - 'chat' або 'announcement'
-         * @param {string} docId - ID документа
-         * @param {string} data1 - Текст повідомлення АБО Заголовок оголошення
-         * @param {string} [data2] - Тіло оголошення (тільки для 'announcement')
+         * Показати/сховати модальне вікно редагування
          */
         function showEditModal(type, docId, data1, data2) {
             if (type === false) { // Для закриття
@@ -1303,13 +1391,13 @@
 
             if (type === 'chat') {
                 ui.editModalTitle.textContent = "Редагувати Повідомлення";
-                ui.editModalTitleGroup.classList.add('hidden');
-                ui.editModalInputBody.value = data1; // data1 - це текст повідомлення
+                ui.editModalTitleGroup.classList.add('hidden'); // Ховаємо заголовок
+                ui.editModalInputBody.value = data1; // data1 - текст повідомлення
             } else if (type === 'announcement') {
                 ui.editModalTitle.textContent = "Редагувати Оголошення";
-                ui.editModalTitleGroup.classList.remove('hidden');
-                ui.editModalInputTitle.value = data1; // data1 - це заголовок
-                ui.editModalInputBody.value = data2; // data2 - це тіло
+                ui.editModalTitleGroup.classList.remove('hidden'); // Показуємо заголовок
+                ui.editModalInputTitle.value = data1; // data1 - заголовок
+                ui.editModalInputBody.value = data2; // data2 - тіло
             }
             
             ui.editModal.classList.remove('hidden');
@@ -1325,17 +1413,20 @@
             
             let collectionName = '';
             let dataToUpdate = {};
+            let statusElement = ui.editStatus; // Повідомлення про стан
 
             try {
                 if (type === 'chat') {
                     if (body === '') throw new Error("Повідомлення не може бути порожнім.");
                     collectionName = COLLECTIONS.CHAT;
                     dataToUpdate = { text: body, updatedAt: new Date() };
+                    statusElement = ui.chatStatus; // Показуємо статус під чатом
                 } else if (type === 'announcement') {
                     const title = ui.editModalInputTitle.value.trim();
                     if (title === '' || body === '') throw new Error("Заголовок та текст не можуть бути порожніми.");
                     collectionName = COLLECTIONS.ANNOUNCEMENTS;
                     dataToUpdate = { title: title, body: body, updatedAt: new Date() };
+                     statusElement = ui.announcementStatus; // Показуємо статус під формою оголошень
                 } else {
                     return; // Невідомий тип
                 }
@@ -1343,12 +1434,12 @@
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', collectionName, docId);
                 await updateDoc(docRef, dataToUpdate);
                 
-                showTempStatus(ui.editStatus, "Зміни збережено!", true);
-                setTimeout(() => showEditModal(false), 1500); // Закрити модальне вікно
+                showTempStatus(statusElement, "Зміни збережено!", true);
+                showEditModal(false); // Закрити модальне вікно
 
             } catch (error) {
                 console.error("Помилка збереження змін:", error);
-                showTempStatus(ui.editStatus, `Помилка: ${error.message}`, false);
+                showTempStatus(ui.editStatus, `Помилка: ${error.message}`, false); // Показуємо помилку в модальному вікні
             }
         }
 
@@ -1358,7 +1449,7 @@
         function deleteMessage(docId, text) {
             showConfirmModal(
                 "Видалити Повідомлення?",
-                `Ви впевнені, що хочете видалити це повідомлення: "${text.substring(0, 30)}..."?`,
+                `"${text.substring(0, 50)}..."`,
                 async () => {
                     try {
                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.CHAT, docId);
@@ -1366,10 +1457,10 @@
                             isDeleted: true,
                             updatedAt: new Date()
                         });
-                        // UI оновить onSnapshot
+                        showTempStatus(ui.chatStatus, "Повідомлення видалено.", true);
                     } catch (error) {
                         console.error("Помилка видалення повідомлення:", error);
-                        showTempStatus(ui.chatStatus, "Помилка видалення. Перевірте Правила.", false);
+                        showTempStatus(ui.chatStatus, "Помилка видалення.", false);
                     }
                 }
             );
@@ -1380,25 +1471,25 @@
          */
         function deleteAnnouncement(docId) {
              showConfirmModal(
-                "Видалити Оголошення?",
-                `Ви впевнені, що хочете видалити це оголошення?`,
-                async () => {
-                    try {
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.ANNOUNCEMENTS, docId);
-                        // Використовуємо м'яке видалення
-                        await updateDoc(docRef, {
-                            isDeleted: true,
-                            updatedAt: new Date()
-                        });
-                    } catch (error) {
-                        console.error("Помилка видалення оголошення:", error);
-                        showTempStatus(ui.announcementStatus, "Помилка видалення. Перевірте Правила.", false);
-                    }
-                }
-            );
+                 "Видалити Оголошення?",
+                 `Ви впевнені?`,
+                 async () => {
+                     try {
+                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.ANNOUNCEMENTS, docId);
+                         await updateDoc(docRef, {
+                             isDeleted: true,
+                             updatedAt: new Date()
+                         });
+                          showTempStatus(ui.announcementStatus, "Оголошення видалено.", true);
+                     } catch (error) {
+                         console.error("Помилка видалення оголошення:", error);
+                         showTempStatus(ui.announcementStatus, "Помилка видалення.", false);
+                     }
+                 }
+             );
         }
 
-        // --- НОВІ ФУНКЦІЇ (ЗАВДАННЯ) ---
+        // --- ФУНКЦІЇ ЗАВДАНЬ ---
 
         /**
          * Перемикання головних вкладок (Головна / Завдання)
@@ -1465,27 +1556,27 @@
                 // UI оновить onSnapshot
             } catch (error) {
                 console.error("Помилка оновлення статусу завдання:", error);
-                // Можна показати помилку біля списку завдань, якщо потрібно
             }
         }
 
         /**
-         * Видалення завдання (Адмін або автор)
+         * М'яке видалення завдання (Адмін або автор)
          */
         function deleteTask(taskId) {
             showConfirmModal(
                 "Видалити Завдання?",
-                `Ви впевнені, що хочете видалити це завдання?`,
+                `Ви впевнені?`,
                 async () => {
                     try {
                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.TASKS, taskId);
-                        // Використовуємо м'яке видалення
                         await updateDoc(docRef, {
                             isDeleted: true,
                             updatedAt: new Date()
                         });
+                         showTempStatus(ui.taskStatus, "Завдання видалено.", true);
                     } catch (error) {
                         console.error("Помилка видалення завдання:", error);
+                        showTempStatus(ui.taskStatus, "Помилка видалення.", false);
                     }
                 }
             );
@@ -1503,7 +1594,7 @@
             
             showConfirmModal(
                 `Підтвердження: ${actionText}`,
-                `Ви впевнені, що хочете ${actionText} користувача з ID ${targetId.substring(0, 8)}...?`,
+                `ID ${targetId.substring(0, 8)}...?`,
                 async () => { // Це onConfirm колбек
                     const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, targetId);
                     try {
@@ -1514,7 +1605,7 @@
                         showTempStatus(ui.userListActionStatus, `Користувач ${actionText}но.`, true);
                     } catch (error) {
                         console.error(`Помилка при ${actionText} користувача:`, error);
-                        showTempStatus(ui.userListActionStatus, `Помилка: ${error.message}. Перевірте Правила.`, false);
+                        showTempStatus(ui.userListActionStatus, `Помилка: ${error.message}.`, false);
                     }
                 }
             );
@@ -1528,12 +1619,12 @@
 
             showConfirmModal(
                 "Підтвердження Видалення",
-                `УВАГА! Ви впевнені, що хочете видалити профіль ${targetEmail}? (Видаляє дані з Firestore, не видаляє Auth-акаунт)`,
+                `Видалити профіль ${targetEmail}? (Видаляє дані з Firestore)`,
                 async () => { // onConfirm
                     const userDocRef = doc(db, 'artifacts', appId, COLLECTIONS.USERS, targetId);
                     try {
                         await deleteDoc(userDocRef);
-                        showTempStatus(ui.userListActionStatus, `Профіль ${targetEmail} видалено з Firestore.`, true);
+                        showTempStatus(ui.userListActionStatus, `Профіль ${targetEmail} видалено.`, true);
                     } catch (error) {
                         console.error("Помилка видалення профілю:", error);
                         showTempStatus(ui.userListActionStatus, `Помилка видалення: ${error.message}.`, false);
@@ -1569,7 +1660,7 @@
                 ui.targetUserId.value = '';
             } catch (error) {
                 console.error("Помилка оновлення ролі:", error);
-                showTempStatus(ui.roleStatus, "Помилка: Не вдалося оновити роль. Перевірте Правила.", false);
+                showTempStatus(ui.roleStatus, "Помилка: Не вдалося оновити роль.", false);
             }
         }
         
@@ -1620,7 +1711,7 @@
                     photoURL: photoURL
                 });
                 
-                // 2. Оновлення Firestore-профілю (для збереження імені, телефону та ролі)
+                // 2. Оновлення Firestore-профілю
                 await updateDoc(userDocRef, {
                     name: name,
                     phone: phone,
@@ -1635,13 +1726,13 @@
                 
                 // Оновлення UI
                 updateUIForUser();
-                ui.profilePhotoInputDisplay.src = photoURL;
+                ui.profilePhotoInputDisplay.src = photoURL; // Оновити фото в модальному вікні
 
                 showTempStatus(ui.profileStatus, "Профіль успішно оновлено!", true);
 
             } catch (error) {
                 console.error("Помилка збереження профілю:", error);
-                showTempStatus(ui.profileStatus, `Помилка: ${error.message}. Перевірте Правила.`, false);
+                showTempStatus(ui.profileStatus, `Помилка: ${error.message}.`, false);
             }
         }
 
@@ -1663,19 +1754,22 @@
         }
         
         /**
-         * Перемикання вкладок в Адмін-панелі (Оголошення видалено)
+         * Перемикання вкладок в Адмін-панелі
          */
         function switchAdminTab(tabName) {
             document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.add('hidden'));
             document.getElementById(`admin-tab-${tabName}`).classList.remove('hidden');
             
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+            document.querySelectorAll('#admin-modal .tab-btn').forEach(btn => {
                 btn.classList.remove('text-blue-600', 'border-blue-600');
                 btn.classList.add('text-gray-600');
             });
             
-            document.querySelector(`.tab-btn[onclick*="${tabName}"]`).classList.add('text-blue-600', 'border-blue-600');
-            document.querySelector(`.tab-btn[onclick*="${tabName}"]`).classList.remove('text-gray-600');
+            const activeBtn = document.querySelector(`#admin-modal .tab-btn[onclick*="${tabName}"]`);
+             if (activeBtn) {
+                 activeBtn.classList.add('text-blue-600', 'border-blue-600');
+                 activeBtn.classList.remove('text-gray-600');
+             }
             
             // Спеціальна логіка при перемиканні на вкладку користувачів
             if (tabName === 'users') {
@@ -1703,7 +1797,6 @@
         window.saveProfileSettings = saveProfileSettings;
         window.copyToClipboard = copyToClipboard;
         
-        // НОВІ ГЛОБАЛЬНІ ФУНКЦІЇ
         window.switchMainTab = switchMainTab;
         window.createTask = createTask;
         window.toggleTaskStatus = toggleTaskStatus;
